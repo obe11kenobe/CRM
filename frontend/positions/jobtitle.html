@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Должности | CRM{% endblock %}
+
+{% block content %}
+<section class="{% if form or object %}auth-card{% else %}workspace{% endif %}">
+    {% if form %}
+        <div class="auth-header">
+            <h1 class="auth-title">
+                {% if object %}Редактировать должность{% else %}Новая должность{% endif %}
+            </h1>
+            <p class="auth-subtitle">Настройте название, родительскую должность, активность и права.</p>
+        </div>
+
+        <form class="form" method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                {{ form.non_field_errors }}
+            {% endif %}
+
+            {% for field in form %}
+                <div class="field">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}
+                        <div class="helptext">{{ field.help_text }}</div>
+                    {% endif %}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+
+            <button class="button" type="submit">Сохранить</button>
+        </form>
+
+        <p class="secondary-action">
+            <a href="{% url 'job_title_list' %}">Назад к списку</a>
+        </p>
+    {% elif object %}
+        <div class="auth-header">
+            <h1 class="auth-title">Удалить должность</h1>
+            <p class="auth-subtitle">Должность "{{ object }}" будет удалена. Это действие нельзя отменить.</p>
+        </div>
+
+        <form class="form" method="post">
+            {% csrf_token %}
+            <button class="button danger-button" type="submit">Удалить</button>
+        </form>
+
+        <p class="secondary-action">
+            <a href="{% url 'job_title_list' %}">Отмена</a>
+        </p>
+    {% else %}
+        <div class="workspace-header">
+            <div>
+                <h1 class="workspace-title">Должности</h1>
+                <p class="workspace-subtitle">Иерархия ролей компании и наборы прав доступа.</p>
+            </div>
+            <a class="button" href="{% url 'job_title_create' %}">Добавить</a>
+        </div>
+
+        {% if positions %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Должность</th>
+                            <th>Родитель</th>
+                            <th>Статус</th>
+                            <th>Права</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for position in positions %}
+                            <tr>
+                                <td>
+                                    <strong>{{ position.job_title|default:"Без названия" }}</strong>
+                                    {% if position.description %}
+                                        <div class="helptext">{{ position.description }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ position.parent|default:"-" }}</td>
+                                <td>
+                                    {% if position.is_active %}
+                                        <span class="status status-active">Активна</span>
+                                    {% else %}
+                                        <span class="status status-muted">Отключена</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ position.permissions.count }}</td>
+                                <td>
+                                    <div class="row-actions">
+                                        <a href="{% url 'job_title_update' position.pk %}">Изменить</a>
+                                        <a href="{% url 'job_title_delete' position.pk %}">Удалить</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">Должностей пока нет.</div>
+        {% endif %}
+    {% endif %}
+</section>
+{% endblock %}

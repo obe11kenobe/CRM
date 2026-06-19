@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Вход | CRM{% endblock %}
+
+{% block content %}
+<section class="auth-card" aria-labelledby="login-title">
+    <div class="auth-header">
+        <h1 class="auth-title" id="login-title">Вход в CRM</h1>
+        <p class="auth-subtitle">Используйте логин и пароль от учетной записи.</p>
+    </div>
+
+    <form class="form" method="post">
+        {% csrf_token %}
+        {% url 'home' as home_url %}
+        <input type="hidden" name="next" value="{{ next|default:home_url }}">
+
+        {% if form.non_field_errors %}
+            {{ form.non_field_errors }}
+        {% endif %}
+
+        {% for field in form %}
+            <div class="field">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                    <div class="helptext">{{ field.help_text }}</div>
+                {% endif %}
+                {{ field.errors }}
+            </div>
+        {% endfor %}
+
+        <button class="button" type="submit">Войти</button>
+    </form>
+
+    <p class="secondary-action">
+        Нет аккаунта? <a href="{% url 'signup' %}">Зарегистрироваться</a>
+    </p>
+</section>
+{% endblock %}

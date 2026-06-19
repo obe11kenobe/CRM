@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}CRM{% endblock %}
+
+{% block content %}
+<section class="home-panel" aria-labelledby="home-title">
+    {% if user.is_authenticated %}
+        <h1 class="home-title" id="home-title">Здравствуйте, {{ user.username }}</h1>
+        <p class="home-text">Вы вошли в систему. Здесь позже можно разместить рабочую область CRM.</p>
+        <div class="home-actions">
+            <form class="logout-form" action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button class="button button-light" type="submit">Выйти</button>
+            </form>
+        </div>
+    {% else %}
+        <h1 class="home-title" id="home-title">CRM для работы с клиентами</h1>
+        <p class="home-text">Войдите в аккаунт или создайте новый профиль, чтобы начать работу.</p>
+        <div class="home-actions">
+            <a class="button" href="{% url 'login' %}">Войти</a>
+            <a class="button button-light" href="{% url 'signup' %}">Регистрация</a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}
