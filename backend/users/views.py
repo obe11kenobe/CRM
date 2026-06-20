@@ -13,6 +13,9 @@ from django.views.generic.edit import CreateView
 from .forms import CustomUserCreationForm, ProfileUserForm
 from .models import CustomUser, JobTitle
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SignUpViews(CreateView):
     form_class = CustomUserCreationForm
@@ -24,6 +27,7 @@ class SignUpViews(CreateView):
         user.is_active = False
         user.email_verified = False
         user.save()
+        logger.info("User registered: %s", user.email)
 
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
@@ -37,6 +41,8 @@ class SignUpViews(CreateView):
             from_email=None,
             recipient_list=[user.email],
         )
+
+        logger.info("Activation email sent: %s", user.email)
 
         return redirect('signup_done')
 
@@ -54,7 +60,12 @@ class ActivateViews(View):
             user.email_verified = True
             user.is_active = True
             user.save()
+
+            logger.info("User email activated: %s", user.email)
+
             return redirect('activation_success')
+
+        logger.warning("Invalid activation link: uid=%s", uidb64)
 
         return redirect('activation_invalid')
 

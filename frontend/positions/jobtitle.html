@@ -3,15 +3,16 @@
 {% block title %}Должности | CRM{% endblock %}
 
 {% block content %}
-<section class="{% if form or object %}auth-card{% else %}workspace{% endif %}">
-    {% if form %}
-        <div class="auth-header">
-            <h1 class="auth-title">
-                {% if object %}Редактировать должность{% else %}Новая должность{% endif %}
-            </h1>
-            <p class="auth-subtitle">Настройте название, родительскую должность, активность и права.</p>
-        </div>
+{% if form %}
+<div style="max-width:520px; width:100%;">
+    <div class="page-header">
+        <h1 class="page-title">
+            {% if object %}Редактировать должность{% else %}Новая должность{% endif %}
+        </h1>
+        <p class="page-sub">Настройте название, родительскую должность и права доступа.</p>
+    </div>
 
+    <div class="auth-card" style="width:100%; box-shadow:var(--shadow);">
         <form class="form" method="post">
             {% csrf_token %}
 
@@ -20,89 +21,113 @@
             {% endif %}
 
             {% for field in form %}
-                <div class="field">
-                    {{ field.label_tag }}
-                    {{ field }}
-                    {% if field.help_text %}
-                        <div class="helptext">{{ field.help_text }}</div>
-                    {% endif %}
-                    {{ field.errors }}
-                </div>
+            <div class="field">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                    <div class="helptext">{{ field.help_text }}</div>
+                {% endif %}
+                {{ field.errors }}
+            </div>
             {% endfor %}
 
             <button class="button" type="submit">Сохранить</button>
         </form>
 
         <p class="secondary-action">
-            <a href="{% url 'job_title_list' %}">Назад к списку</a>
+            <a href="{% url 'job_title_list' %}">← Назад к списку</a>
         </p>
-    {% elif object %}
-        <div class="auth-header">
-            <h1 class="auth-title">Удалить должность</h1>
-            <p class="auth-subtitle">Должность "{{ object }}" будет удалена. Это действие нельзя отменить.</p>
-        </div>
+    </div>
+</div>
 
+{% elif object %}
+<div style="max-width:420px; width:100%;">
+    <div class="page-header">
+        <h1 class="page-title">Удалить должность</h1>
+        <p class="page-sub">Это действие нельзя отменить.</p>
+    </div>
+
+    <div class="auth-card" style="width:100%; box-shadow:var(--shadow);">
+        <p style="margin:0 0 20px; font-size:15px;">
+            Должность <strong>«{{ object }}»</strong> будет удалена.
+            Пользователи с этой должностью потеряют привязку.
+        </p>
         <form class="form" method="post">
             {% csrf_token %}
             <button class="button danger-button" type="submit">Удалить</button>
         </form>
-
         <p class="secondary-action">
             <a href="{% url 'job_title_list' %}">Отмена</a>
         </p>
-    {% else %}
-        <div class="workspace-header">
-            <div>
-                <h1 class="workspace-title">Должности</h1>
-                <p class="workspace-subtitle">Иерархия ролей компании и наборы прав доступа.</p>
-            </div>
-            <a class="button" href="{% url 'job_title_create' %}">Добавить</a>
-        </div>
+    </div>
+</div>
 
-        {% if positions %}
-            <div class="table-wrap">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Должность</th>
-                            <th>Родитель</th>
-                            <th>Статус</th>
-                            <th>Права</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for position in positions %}
-                            <tr>
-                                <td>
-                                    <strong>{{ position.job_title|default:"Без названия" }}</strong>
-                                    {% if position.description %}
-                                        <div class="helptext">{{ position.description }}</div>
-                                    {% endif %}
-                                </td>
-                                <td>{{ position.parent|default:"-" }}</td>
-                                <td>
-                                    {% if position.is_active %}
-                                        <span class="status status-active">Активна</span>
-                                    {% else %}
-                                        <span class="status status-muted">Отключена</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ position.permissions.count }}</td>
-                                <td>
-                                    <div class="row-actions">
-                                        <a href="{% url 'job_title_update' position.pk %}">Изменить</a>
-                                        <a href="{% url 'job_title_delete' position.pk %}">Удалить</a>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="empty-state">Должностей пока нет.</div>
-        {% endif %}
+{% else %}
+<div class="workspace">
+    <div class="workspace-header">
+        <div>
+            <h1 class="workspace-title">Должности</h1>
+            <p class="workspace-subtitle">Иерархия ролей компании и наборы прав доступа.</p>
+        </div>
+        <a class="button button-auto" href="{% url 'job_title_create' %}">
+            <svg width="14" height="14" fill="none" viewBox="0 0 14 14" stroke="currentColor" stroke-width="2">
+                <path d="M7 1v12M1 7h12" stroke-linecap="round"/>
+            </svg>
+            Добавить
+        </a>
+    </div>
+
+    {% if positions %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Должность</th>
+                    <th>Родитель</th>
+                    <th>Статус</th>
+                    <th>Права</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for position in positions %}
+                <tr>
+                    <td>
+                        <strong>{{ position.job_title|default:"Без названия" }}</strong>
+                        {% if position.description %}
+                            <div class="helptext">{{ position.description|truncatechars:60 }}</div>
+                        {% endif %}
+                    </td>
+                    <td style="color:var(--muted);">{{ position.parent|default:"—" }}</td>
+                    <td>
+                        {% if position.is_active %}
+                            <span class="status status-active">Активна</span>
+                        {% else %}
+                            <span class="status status-muted">Отключена</span>
+                        {% endif %}
+                    </td>
+                    <td style="color:var(--muted);">{{ position.permissions.count }}</td>
+                    <td>
+                        <div class="row-actions">
+                            <a href="{% url 'job_title_update' position.pk %}">Изменить</a>
+                            <a href="{% url 'job_title_delete' position.pk %}" class="danger">Удалить</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <svg width="36" height="36" fill="none" viewBox="0 0 36 36" stroke="var(--line)" stroke-width="1.5" style="display:block;margin:0 auto 12px;">
+            <rect x="4" y="8" width="28" height="22" rx="3"/>
+            <path d="M12 8V7a6 6 0 0112 0v1" stroke-linecap="round"/>
+            <path d="M4 17h28" stroke-linecap="round"/>
+        </svg>
+        Должностей пока нет. <a href="{% url 'job_title_create' %}">Добавить первую</a>
+    </div>
     {% endif %}
-</section>
+</div>
+{% endif %}
 {% endblock %}

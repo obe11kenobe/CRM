@@ -3,26 +3,27 @@
 {% block title %}Профиль | CRM{% endblock %}
 
 {% block content %}
-<section class="auth-card" aria-labelledby="profile-title">
-    <div class="auth-header">
-        <h1 class="auth-title" id="profile-title">Профиль</h1>
-        <p class="auth-subtitle">Обновите личные данные, должность и фотографию.</p>
+<div style="max-width:520px; width:100%;">
+    <div class="page-header">
+        <h1 class="page-title">Профиль</h1>
+        <p class="page-sub">Обновите личные данные, должность и фотографию.</p>
     </div>
 
-    {% if user.photo %}
+    <div class="auth-card" style="width:100%; box-shadow:var(--shadow);">
+        {% if user.photo %}
         <div class="profile-photo">
             <img src="{{ user.photo.url }}" alt="Фотография профиля">
         </div>
-    {% endif %}
-
-    <form class="form" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-
-        {% if form.non_field_errors %}
-            {{ form.non_field_errors }}
         {% endif %}
 
-        {% for field in form %}
+        <form class="form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                {{ form.non_field_errors }}
+            {% endif %}
+
+            {% for field in form %}
             <div class="field">
                 {{ field.label_tag }}
                 {{ field }}
@@ -31,9 +32,10 @@
                 {% endif %}
                 {{ field.errors }}
             </div>
-        {% endfor %}
+            {% endfor %}
 
-        <button class="button" type="submit">Сохранить</button>
-    </form>
-</section>
+            <button class="button" type="submit">Сохранить изменения</button>
+        </form>
+    </div>
+</div>
 {% endblock %}

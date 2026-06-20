@@ -3,23 +3,62 @@
 {% block title %}CRM{% endblock %}
 
 {% block content %}
+{% if user.is_authenticated %}
+<div style="max-width:780px;">
+    <div class="page-header">
+        <h1 class="page-title">Добро пожаловать, {{ user.first_name|default:user.username }} 👋</h1>
+        <p class="page-sub">
+            {% if user.job_title %}Должность: <strong>{{ user.job_title }}</strong> · {% endif %}
+            CRM — управление сотрудниками и должностями
+        </p>
+    </div>
+
+    <div class="dash-grid">
+        <a class="dash-card" href="{% url 'job_title_list' %}">
+            <div class="dash-card-icon">
+                <svg width="20" height="20" fill="none" viewBox="0 0 20 20" stroke="currentColor" stroke-width="1.6">
+                    <rect x="2" y="6" width="16" height="11" rx="1.5"/>
+                    <path d="M7 6V5a3 3 0 016 0v1" stroke-linecap="round"/>
+                    <path d="M2 11h16" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="dash-card-title">Должности</div>
+            <div class="dash-card-sub">Управление ролями и иерархией</div>
+        </a>
+
+        <a class="dash-card" href="{% url 'profile' %}">
+            <div class="dash-card-icon">
+                <svg width="20" height="20" fill="none" viewBox="0 0 20 20" stroke="currentColor" stroke-width="1.6">
+                    <circle cx="10" cy="7" r="3.5"/>
+                    <path d="M3 18c0-3.866 3.134-6 7-6s7 2.134 7 6" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="dash-card-title">Профиль</div>
+            <div class="dash-card-sub">Личные данные и настройки</div>
+        </a>
+
+        {% if user.is_staff %}
+        <a class="dash-card" href="{% url 'admin:index' %}">
+            <div class="dash-card-icon" style="background:#fef3c7; color:#d97706;">
+                <svg width="20" height="20" fill="none" viewBox="0 0 20 20" stroke="currentColor" stroke-width="1.6">
+                    <path d="M10 2l2.2 5.6H18l-4.6 3.3 1.8 5.5L10 13.2 4.8 16.4l1.8-5.5L2 7.6h5.8L10 2z" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="dash-card-title">Администрирование</div>
+            <div class="dash-card-sub">Панель управления Django</div>
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% else %}
 <section class="home-panel" aria-labelledby="home-title">
-    {% if user.is_authenticated %}
-        <h1 class="home-title" id="home-title">Здравствуйте, {{ user.username }}</h1>
-        <p class="home-text">Вы вошли в систему. Здесь позже можно разместить рабочую область CRM.</p>
-        <div class="home-actions">
-            <form class="logout-form" action="{% url 'logout' %}" method="post">
-                {% csrf_token %}
-                <button class="button button-light" type="submit">Выйти</button>
-            </form>
-        </div>
-    {% else %}
-        <h1 class="home-title" id="home-title">CRM для работы с клиентами</h1>
-        <p class="home-text">Войдите в аккаунт или создайте новый профиль, чтобы начать работу.</p>
-        <div class="home-actions">
-            <a class="button" href="{% url 'login' %}">Войти</a>
-            <a class="button button-light" href="{% url 'signup' %}">Регистрация</a>
-        </div>
-    {% endif %}
+    <h1 class="home-title" id="home-title">CRM для управления<br>сотрудниками</h1>
+    <p class="home-text">Войдите в аккаунт или создайте новый, чтобы начать работу с системой.</p>
+    <div class="home-actions">
+        <a class="button" href="{% url 'login' %}">Войти</a>
+        <a class="button button-light" href="{% url 'signup' %}">Регистрация</a>
+    </div>
 </section>
+{% endif %}
 {% endblock %}
