@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Email подтвержден | CRM{% endblock %}
+
+{% block content %}
+<section class="auth-card" aria-labelledby="activation-success-title">
+    <div class="auth-header">
+        <h1 class="auth-title" id="activation-success-title">Email подтвержден</h1>
+        <p class="auth-subtitle">Аккаунт активирован. Теперь можно войти в CRM.</p>
+    </div>
+
+    <a class="button" href="{% url 'login' %}">Войти</a>
+</section>
+{% endblock %}

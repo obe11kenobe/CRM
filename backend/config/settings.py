@@ -1,10 +1,17 @@
+import environ
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+ROOT_DIR = BASE_DIR.parent
 
-SECRET_KEY = "django-insecure-b*ir&$m^1!njv_s(^x5ie65cdl3g0evdgfjpy6rwmz@3(7@h$o"
+env = environ.Env(
+    DEBUG=(bool, False),
+)
 
-DEBUG = True
+environ.Env.read_env(ROOT_DIR / ".env")
+
+SECRET_KEY = env("SECRET_KEY")
+DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = []
 
@@ -50,8 +57,12 @@ TEMPLATES = [
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": env("DB_NAME"),
+        "USER": env("DB_USER"),
+        "PASSWORD": env("DB_PASSWORD"),
+        "HOST": env("DB_HOST"),
+        "PORT": env("DB_PORT"),
     }
 }
 
@@ -69,9 +80,16 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 AUTH_USER_MODEL = "users.CustomUser"
+
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "login"
 
 LANGUAGE_CODE = "ru-ru"
 

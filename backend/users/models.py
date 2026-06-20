@@ -5,6 +5,15 @@ from django.contrib.auth.models import AbstractUser
 class CustomUser(AbstractUser):
     photo = models.ImageField(blank=True, null=True, verbose_name="Фотография")
     date_birth = models.DateField(blank=True, null=True, verbose_name="Дата рождения")
+    job_title = models.ForeignKey(
+        'JobTitle',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='users',
+        verbose_name='Должность',
+    )
+    email_verified = models.BooleanField(default=False, verbose_name='Email подтвержден')
 
     def __str__(self):
         return self.username

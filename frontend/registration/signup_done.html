@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Проверьте почту | CRM{% endblock %}
+
+{% block content %}
+<section class="auth-card" aria-labelledby="signup-done-title">
+    <div class="auth-header">
+        <h1 class="auth-title" id="signup-done-title">Проверьте почту</h1>
+        <p class="auth-subtitle">Мы отправили ссылку для подтверждения аккаунта. После подтверждения вы сможете войти.</p>
+    </div>
+
+    <a class="button" href="{% url 'login' %}">Перейти ко входу</a>
+</section>
+{% endblock %}

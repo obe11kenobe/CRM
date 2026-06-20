@@ -1,5 +1,4 @@
 import datetime
-
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import CustomUser
@@ -8,6 +7,17 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = CustomUser
         fields = ('username','email')
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+
+        if not email:
+            raise forms.ValidationError('Email обязателен')
+
+        if CustomUser.objects.filter(email=email).exists():
+            raise forms.ValidationError('Пользователь с такой почтой уже существует')
+
+        return email
 
 class CustomUserChangeForm(UserChangeForm):
     class Meta:
@@ -24,4 +34,4 @@ class ProfileUserForm(forms.ModelForm):
 
     class Meta:
         model = CustomUser
-        fields = ["username", "first_name", "last_name", "email", "date_birth"]
+        fields = ["username", "first_name", "last_name", "email", "date_birth", 'photo', 'job_title',]

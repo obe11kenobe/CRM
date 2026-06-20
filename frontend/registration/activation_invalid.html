@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Ссылка недействительна | CRM{% endblock %}
+
+{% block content %}
+<section class="auth-card" aria-labelledby="activation-invalid-title">
+    <div class="auth-header">
+        <h1 class="auth-title" id="activation-invalid-title">Ссылка недействительна</h1>
+        <p class="auth-subtitle">Ссылка активации устарела или уже была использована. Попробуйте зарегистрироваться заново.</p>
+    </div>
+
+    <a class="button" href="{% url 'signup' %}">Зарегистрироваться</a>
+</section>
+{% endblock %}

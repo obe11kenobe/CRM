@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль | CRM{% endblock %}
+
+{% block content %}
+<section class="auth-card" aria-labelledby="profile-title">
+    <div class="auth-header">
+        <h1 class="auth-title" id="profile-title">Профиль</h1>
+        <p class="auth-subtitle">Обновите личные данные, должность и фотографию.</p>
+    </div>
+
+    {% if user.photo %}
+        <div class="profile-photo">
+            <img src="{{ user.photo.url }}" alt="Фотография профиля">
+        </div>
+    {% endif %}
+
+    <form class="form" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            {{ form.non_field_errors }}
+        {% endif %}
+
+        {% for field in form %}
+            <div class="field">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                    <div class="helptext">{{ field.help_text }}</div>
+                {% endif %}
+                {{ field.errors }}
+            </div>
+        {% endfor %}
+
+        <button class="button" type="submit">Сохранить</button>
+    </form>
+</section>
+{% endblock %}
