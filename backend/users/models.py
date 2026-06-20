@@ -13,7 +13,25 @@ class CustomUser(AbstractUser):
         related_name='users',
         verbose_name='Должность',
     )
+
     email_verified = models.BooleanField(default=False, verbose_name='Email подтвержден')
+    phone = models.CharField(max_length=20, blank=True, verbose_name='Телефон')
+    middle_name = models.CharField(max_length=50, blank=True, verbose_name='Отчество')
+
+    manager = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='subordinates',
+        verbose_name='Руководитель',
+    )
+
+    @property
+    def full_name(self):
+        return ' '.join(
+            part for part in [self.last_name, self.first_name, self.middle_name] if part
+        ) or self.username
 
     def __str__(self):
         return self.username

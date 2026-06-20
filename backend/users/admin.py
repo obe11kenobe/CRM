@@ -10,9 +10,31 @@ class CustomUserAdmin(BaseUserAdmin):
     add_form = CustomUserCreationForm
     form = CustomUserChangeForm
     model = CustomUser
-    list_display = ("username", "email", "photo", "date_birth")
+    list_display = (
+        "username",
+        "email",
+        "phone",
+        "middle_name",
+        "manager",
+        "job_title",
+        "photo",
+        "date_birth",
+    )
     fieldsets = BaseUserAdmin.fieldsets + (
-        ("Дополнительная информация", {"fields": ("photo", "date_birth")}),
+        (
+            "Дополнительная информация",
+            {
+                "fields": (
+                    "photo",
+                    "date_birth",
+                    "phone",
+                    "middle_name",
+                    "manager",
+                    "job_title",
+                    "email_verified",
+                )
+            },
+        ),
     )
 
 admin.site.register(CustomUser, CustomUserAdmin)
