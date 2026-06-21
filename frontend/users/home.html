@@ -6,10 +6,9 @@
 {% if user.is_authenticated %}
 <div style="max-width:780px;">
     <div class="page-header">
-        <h1 class="page-title">Добро пожаловать, {{ user.first_name|default:user.username }} 👋</h1>
+        <h1 class="page-title">Добро пожаловать, {{ user.full_name }} 👋</h1>
         <p class="page-sub">
-            {% if user.job_title %}Должность: <strong>{{ user.job_title }}</strong> · {% endif %}
-            CRM — управление сотрудниками и должностями
+            {% if user.job_title %}Должность: <strong>{{ user.job_title }}</strong>{% if user.manager %} · Руководитель: <strong>{{ user.manager.full_name }}</strong>{% endif %}{% else %}CRM — управление сотрудниками и должностями{% endif %}
         </p>
     </div>
 
