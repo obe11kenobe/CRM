@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Импорт Excel | CRM{% endblock %}
+
+{% block content %}
+<style>
+    .import-page { width: min(100%, 980px); }
+    .import-layout {
+        display: grid;
+        grid-template-columns: minmax(0, .95fr) minmax(320px, .7fr);
+        gap: 18px;
+        align-items: start;
+    }
+    .import-panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+    .import-panel-head {
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--line);
+    }
+    .import-panel-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 750;
+    }
+    .import-panel-sub {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+    }
+    .import-form {
+        display: grid;
+        gap: 16px;
+        padding: 20px;
+    }
+    .import-check {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+    }
+    .import-check input { width: auto; min-height: auto; margin-top: 2px; }
+    .import-result {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        padding: 20px;
+    }
+    .import-stat {
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #f9fafb;
+    }
+    .import-stat-value {
+        font-size: 24px;
+        font-weight: 780;
+        line-height: 1;
+    }
+    .import-stat-label {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 12px;
+    }
+    .import-guide {
+        padding: 20px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.55;
+    }
+    .import-guide ol {
+        margin: 12px 0 0;
+        padding-left: 18px;
+    }
+    .import-guide li { margin: 7px 0; }
+    .import-warning-list {
+        margin: 0;
+        padding: 0 20px 20px 38px;
+        color: #92400e;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+    .import-warning-list li { margin: 5px 0; }
+    @media (max-width: 860px) {
+        .import-layout { grid-template-columns: 1fr; }
+        .import-result { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="import-page">
+    <div class="workspace-header">
+        <div>
+            <h1 class="workspace-title">Импорт Excel</h1>
+            <p class="workspace-subtitle">Загрузка детального плана документов в CRM.</p>
+        </div>
+        <a class="button button-outline button-auto" href="{% url 'documents:document_task_list' %}">К документам</a>
+    </div>
+
+    <div class="import-layout">
+        <section class="import-panel">
+            <div class="import-panel-head">
+                <h2 class="import-panel-title">Файл плана</h2>
+                <p class="import-panel-sub">Если включена проверка без записи, документы в базе не появятся.</p>
+            </div>
+
+            <form class="import-form" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    {{ form.non_field_errors }}
+                {% endif %}
+
+                <div class="field">
+                    {{ form.file.label_tag }}
+                    {{ form.file }}
+                    {% if form.file.help_text %}<div class="helptext">{{ form.file.help_text }}</div>{% endif %}
+                    {{ form.file.errors }}
+                </div>
+
+                <div class="field">
+                    {{ form.year.label_tag }}
+                    {{ form.year }}
+                    {% if form.year.help_text %}<div class="helptext">{{ form.year.help_text }}</div>{% endif %}
+                    {{ form.year.errors }}
+                </div>
+
+                <label class="import-check">
+                    {{ form.dry_run }}
+                    <span>
+                        <strong>{{ form.dry_run.label }}</strong>
+                        <span class="helptext" style="display:block;">CRM покажет статистику, залогирует проблемы и откатит изменения. Документы не будут созданы.</span>
+                    </span>
+                </label>
+                {{ form.dry_run.errors }}
+
+                <label class="import-check">
+                    {{ form.update_existing }}
+                    <span>
+                        <strong>{{ form.update_existing.label }}</strong>
+                        <span class="helptext" style="display:block;">Если документ уже найден, данные будут обновлены из Excel.</span>
+                    </span>
+                </label>
+                {{ form.update_existing.errors }}
+
+                <button class="button" type="submit">Запустить импорт</button>
+            </form>
+        </section>
+
+        <aside class="import-panel">
+            <div class="import-panel-head">
+                <h2 class="import-panel-title">Как работает импорт</h2>
+                <p class="import-panel-sub">Файл разбирается по структуре текущего плана.</p>
+            </div>
+            <div class="import-guide">
+                Импорт создает объекты, лицензии, направления, инстанции и документы.
+                <ol>
+                    <li>Объекты берутся из секций Excel.</li>
+                    <li>Документы берутся из колонки с названием документа.</li>
+                    <li>Наличие, дата получения и примечания переносятся в карточку документа.</li>
+                    <li>Дедлайн ищется в примечаниях или по красной зоне календаря.</li>
+                </ol>
+            </div>
+        </aside>
+    </div>
+
+    {% if result %}
+    <section class="import-panel mt-6">
+        <div class="import-panel-head">
+            <h2 class="import-panel-title">Результат импорта</h2>
+            <p class="import-panel-sub">
+                {% if form.cleaned_data.dry_run %}Проверка выполнена без записи в базу.{% else %}Данные записаны в базу.{% endif %}
+            </p>
+        </div>
+        <div class="import-result">
+            <div class="import-stat">
+                <div class="import-stat-value">{{ result.mining_objects_created }}</div>
+                <div class="import-stat-label">Новых объектов</div>
+            </div>
+            <div class="import-stat">
+                <div class="import-stat-value">{{ result.licenses_created }}</div>
+                <div class="import-stat-label">Новых лицензий</div>
+            </div>
+            <div class="import-stat">
+                <div class="import-stat-value">{{ result.directions_created }}</div>
+                <div class="import-stat-label">Новых направлений</div>
+            </div>
+            <div class="import-stat">
+                <div class="import-stat-value">{{ result.authorities_created }}</div>
+                <div class="import-stat-label">Новых инстанций</div>
+            </div>
+            <div class="import-stat">
+                <div class="import-stat-value">{{ result.tasks_created }}</div>
+                <div class="import-stat-label">Документов создано</div>
+            </div>
+            <div class="import-stat">
+                <div class="import-stat-value">{{ result.tasks_updated }}</div>
+                <div class="import-stat-label">Документов обновлено</div>
+            </div>
+            <div class="import-stat">
+                <div class="import-stat-value">{{ result.rows_skipped }}</div>
+                <div class="import-stat-label">Строк пропущено</div>
+            </div>
+        </div>
+        {% if result.warnings %}
+        <div class="import-panel-head" style="border-top:1px solid var(--line);">
+            <h2 class="import-panel-title">Предупреждения импорта</h2>
+            <p class="import-panel-sub">Эти строки были пропущены или требуют проверки.</p>
+        </div>
+        <ol class="import-warning-list">
+            {% for warning in result.warnings|slice:":30" %}
+                <li>{{ warning }}</li>
+            {% endfor %}
+        </ol>
+        {% endif %}
+        {% if not form.cleaned_data.dry_run %}
+        <div style="padding:0 20px 20px;">
+            <a class="button button-auto" href="{% url 'documents:document_assignment' %}">Назначить исполнителей</a>
+        </div>
+        {% endif %}
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

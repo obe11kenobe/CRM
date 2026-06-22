@@ -40,7 +40,26 @@
     .docs-deadline { white-space: nowrap; font-weight: 600; }
     .status-danger { color: #991b1b; background: #fee2e2; }
     .status-warn { color: #92400e; background: #fef3c7; }
-    .docs-table { min-width: 980px; }
+    .docs-table { min-width: 1040px; }
+    .docs-bulkbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+        padding: 10px 12px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+    .docs-bulkbar-text { color: var(--muted); font-size: 13px; }
+    .docs-checkbox {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--primary);
+        vertical-align: middle;
+    }
     @media (max-width: 980px) {
         .docs-toolbar { grid-template-columns: 1fr 1fr; }
         .docs-toolbar .button { width: 100%; }
@@ -54,12 +73,30 @@
             <h1 class="workspace-title">Документы</h1>
             <p class="workspace-subtitle">Контроль обязательств, сроков, инстанций и ответственных.</p>
         </div>
-        <a class="button button-auto" href="{% url 'documents:document_task_create' %}">
-            <svg width="14" height="14" fill="none" viewBox="0 0 14 14" stroke="currentColor" stroke-width="2">
-                <path d="M7 1v12M1 7h12" stroke-linecap="round"/>
-            </svg>
-            Добавить документ
-        </a>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+            <a class="button button-outline button-auto" href="{% url 'documents:document_assignment' %}">
+                <svg width="14" height="14" fill="none" viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.8">
+                    <circle cx="5" cy="4" r="2"/>
+                    <path d="M1.5 12c0-2.2 1.6-4 3.5-4s3.5 1.8 3.5 4" stroke-linecap="round"/>
+                    <path d="M9 4.5h3.5M10.75 2.75v3.5" stroke-linecap="round"/>
+                </svg>
+                Назначить
+            </a>
+            <a class="button button-outline button-auto" href="{% url 'documents:document_import' %}">
+                <svg width="14" height="14" fill="none" viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.8">
+                    <path d="M7 1v8" stroke-linecap="round"/>
+                    <path d="M4 6l3 3 3-3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12h10" stroke-linecap="round"/>
+                </svg>
+                Импорт Excel
+            </a>
+            <a class="button button-auto" href="{% url 'documents:document_task_create' %}">
+                <svg width="14" height="14" fill="none" viewBox="0 0 14 14" stroke="currentColor" stroke-width="2">
+                    <path d="M7 1v12M1 7h12" stroke-linecap="round"/>
+                </svg>
+                Добавить документ
+            </a>
+        </div>
     </div>
 
     <div class="docs-summary">
@@ -127,10 +164,24 @@
     </form>
 
     {% if tasks %}
+    <form method="post" action="{% url 'documents:document_task_bulk_delete' %}" id="bulk-delete-form">
+        {% csrf_token %}
+        <div class="docs-bulkbar">
+            <div class="docs-bulkbar-text">
+                Выбрано: <strong id="selected-count">0</strong>
+            </div>
+            <button class="button button-danger button-auto" id="bulk-delete-button" type="submit" disabled>
+                Удалить выбранные
+            </button>
+        </div>
+
     <div class="table-wrap">
         <table class="table docs-table">
             <thead>
                 <tr>
+                    <th style="width:46px;">
+                        <input class="docs-checkbox" id="select-all-tasks" type="checkbox" aria-label="Выбрать все">
+                    </th>
                     <th>Документ</th>
                     <th>Объект</th>
                     <th>Направление</th>
@@ -144,6 +195,9 @@
             <tbody>
                 {% for task in tasks %}
                 <tr>
+                    <td>
+                        <input class="docs-checkbox task-checkbox" type="checkbox" name="tasks" value="{{ task.pk }}" aria-label="Выбрать {{ task.title }}">
+                    </td>
                     <td>
                         <a class="docs-title-link" href="{% url 'documents:document_task_detail' task.pk %}">
                             <strong>{{ task.title }}</strong>
@@ -187,6 +241,7 @@
             </tbody>
         </table>
     </div>
+    </form>
     {% else %}
     <div class="empty-state">
         Документы не найдены. Измени фильтры или добавь первый документ.
@@ -196,4 +251,45 @@
     </div>
     {% endif %}
 </div>
+<script>
+    (function () {
+        const selectAll = document.getElementById('select-all-tasks');
+        const checkboxes = Array.from(document.querySelectorAll('.task-checkbox'));
+        const count = document.getElementById('selected-count');
+        const deleteButton = document.getElementById('bulk-delete-button');
+        const form = document.getElementById('bulk-delete-form');
+
+        if (!selectAll || !checkboxes.length || !count || !deleteButton || !form) {
+            return;
+        }
+
+        function updateState() {
+            const selected = checkboxes.filter((checkbox) => checkbox.checked).length;
+            count.textContent = selected;
+            deleteButton.disabled = selected === 0;
+            selectAll.checked = selected === checkboxes.length;
+            selectAll.indeterminate = selected > 0 && selected < checkboxes.length;
+        }
+
+        selectAll.addEventListener('change', function () {
+            checkboxes.forEach((checkbox) => {
+                checkbox.checked = selectAll.checked;
+            });
+            updateState();
+        });
+
+        checkboxes.forEach((checkbox) => {
+            checkbox.addEventListener('change', updateState);
+        });
+
+        form.addEventListener('submit', function (event) {
+            const selected = checkboxes.filter((checkbox) => checkbox.checked).length;
+            if (!selected || !confirm(`Удалить выбранные документы: ${selected}?`)) {
+                event.preventDefault();
+            }
+        });
+
+        updateState();
+    })();
+</script>
 {% endblock %}

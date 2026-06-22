@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Назначение исполнителей | CRM{% endblock %}
+
+{% block content %}
+<style>
+    .assign-page { width: min(100%, 1180px); }
+    .assign-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 16px;
+        align-items: start;
+    }
+    .assign-panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+    }
+    .assign-head {
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--line);
+    }
+    .assign-title { margin: 0; font-size: 16px; font-weight: 750; }
+    .assign-sub { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    .assign-filters {
+        display: grid;
+        grid-template-columns: 1.2fr .8fr .8fr auto;
+        gap: 10px;
+        padding: 14px;
+        border-bottom: 1px solid var(--line);
+        background: #f9fafb;
+    }
+    .assign-filters .button { min-height: 42px; width: auto; }
+    .assign-table { min-width: 860px; }
+    .assign-checkbox {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--primary);
+    }
+    .assign-side { padding: 16px; display: grid; gap: 14px; }
+    .assign-side .button { width: 100%; }
+    .assign-count {
+        padding: 12px;
+        border-radius: 6px;
+        background: var(--primary-dim);
+        color: var(--primary);
+        font-size: 13px;
+        font-weight: 650;
+    }
+    .assign-success {
+        margin-bottom: 16px;
+        padding: 12px 14px;
+        border-radius: 6px;
+        color: #15803d;
+        background: #dcfce7;
+        font-size: 14px;
+        font-weight: 650;
+    }
+    @media (max-width: 980px) {
+        .assign-layout { grid-template-columns: 1fr; }
+        .assign-filters { grid-template-columns: 1fr; }
+        .assign-filters .button { width: 100%; }
+    }
+</style>
+
+<div class="assign-page">
+    <div class="workspace-header">
+        <div>
+            <h1 class="workspace-title">Назначение исполнителей</h1>
+            <p class="workspace-subtitle">Разбери импортированные документы и назначь ответственных сотрудникам.</p>
+        </div>
+        <a class="button button-outline button-auto" href="{% url 'documents:document_task_list' %}">К документам</a>
+    </div>
+
+    {% if assigned_count is not None %}
+        <div class="assign-success">Назначено документов: {{ assigned_count }}</div>
+    {% endif %}
+
+    <div class="assign-layout">
+        <section class="assign-panel">
+            <div class="assign-head">
+                <h2 class="assign-title">Документы без исполнителя</h2>
+                <p class="assign-sub">Выбери одну или несколько задач и назначь ответственного.</p>
+            </div>
+
+            <form class="assign-filters" method="get">
+                <div class="field">
+                    <label for="q">Поиск</label>
+                    <input id="q" type="search" name="q" value="{{ filters.q }}" placeholder="Документ, лицензия, инстанция">
+                </div>
+                <div class="field">
+                    <label for="mining_object">Объект</label>
+                    <select id="mining_object" name="mining_object">
+                        <option value="">Все</option>
+                        {% for object in objects %}
+                            <option value="{{ object.pk }}" {% if filters.mining_object == object.pk|stringformat:"s" %}selected{% endif %}>{{ object.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="direction">Направление</label>
+                    <select id="direction" name="direction">
+                        <option value="">Все</option>
+                        {% for direction in directions %}
+                            <option value="{{ direction.pk }}" {% if filters.direction == direction.pk|stringformat:"s" %}selected{% endif %}>{{ direction.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button class="button" type="submit">Показать</button>
+            </form>
+
+            <form id="assign-form" method="post">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    {{ form.non_field_errors }}
+                {% endif %}
+                {{ form.tasks.errors }}
+
+                {% if tasks %}
+                <div class="table-wrap" style="border:0;border-radius:0;box-shadow:none;">
+                    <table class="table assign-table">
+                        <thead>
+                            <tr>
+                                <th style="width:46px;"></th>
+                                <th>Документ</th>
+                                <th>Объект</th>
+                                <th>Направление</th>
+                                <th>Дедлайн</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks %}
+                            <tr>
+                                <td>
+                                    <input class="assign-checkbox" type="checkbox" name="tasks" value="{{ task.pk }}">
+                                </td>
+                                <td>
+                                    <strong>{{ task.title }}</strong>
+                                    <div class="helptext">{{ task.license_object|default:"Лицензия не указана" }} · {{ task.authority|default:"Инстанция не указана" }}</div>
+                                </td>
+                                <td>{{ task.mining_object|default:"-" }}</td>
+                                <td>{{ task.direction|default:"-" }}</td>
+                                <td>{{ task.deadline|date:"d.m.Y H:i"|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state" style="border:0;border-radius:0;">
+                    Неназначенных документов нет.
+                </div>
+                {% endif %}
+            </form>
+        </section>
+
+        <aside class="assign-panel">
+            <div class="assign-head">
+                <h2 class="assign-title">Исполнитель</h2>
+                <p class="assign-sub">Назначение применится ко всем выбранным документам.</p>
+            </div>
+            <div class="assign-side">
+                <div class="assign-count">В выборке документов: {{ tasks|length }}</div>
+                <div class="field">
+                    {{ form.responsible.label_tag }}
+                    <select name="{{ form.responsible.html_name }}" id="{{ form.responsible.id_for_label }}" form="assign-form">
+                        {% for value, label in form.responsible.field.choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    {{ form.responsible.errors }}
+                </div>
+                <button class="button" form="assign-form" type="submit">Назначить выбранные</button>
+                <a class="button button-outline" href="{% url 'documents:document_import' %}">Импорт Excel</a>
+            </div>
+        </aside>
+    </div>
+</div>
+{% endblock %}
