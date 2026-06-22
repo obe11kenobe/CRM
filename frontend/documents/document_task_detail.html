@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}{{ task.title }} | CRM{% endblock %}
+
+{% block content %}
+<style>
+    .doc-detail { width: min(100%, 980px); }
+    .doc-detail-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+    }
+    .doc-detail-actions {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .doc-detail-actions .button { width: auto; }
+    .doc-hero {
+        padding: 22px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        margin-bottom: 16px;
+    }
+    .doc-hero-title {
+        margin: 10px 0 0;
+        font-size: 28px;
+        line-height: 1.2;
+        font-weight: 780;
+    }
+    .doc-info-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .doc-info {
+        padding: 14px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+    .doc-info-label {
+        margin-bottom: 4px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
+    .doc-info-value { font-size: 14px; font-weight: 600; }
+    .doc-comment {
+        padding: 18px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+    .doc-comment p { margin: 8px 0 0; white-space: pre-wrap; }
+    .status-danger { color: #991b1b; background: #fee2e2; }
+    .status-warn { color: #92400e; background: #fef3c7; }
+    @media (max-width: 760px) {
+        .doc-detail-top { flex-direction: column; }
+        .doc-detail-actions { flex-direction: column; }
+        .doc-detail-actions .button { width: 100%; }
+        .doc-info-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="doc-detail">
+    <div class="doc-detail-top">
+        <div>
+            <a href="{% url 'documents:document_task_list' %}">Назад к документам</a>
+        </div>
+        <div class="doc-detail-actions">
+            <a class="button button-outline" href="{% url 'documents:document_task_update' task.pk %}">Редактировать</a>
+            <a class="button button-danger" href="{% url 'documents:document_task_delete' task.pk %}">Удалить</a>
+        </div>
+    </div>
+
+    <section class="doc-hero">
+        {% if task.status == "done" %}
+            <span class="status status-active">{{ task.get_status_display }}</span>
+        {% elif task.status == "overdue" %}
+            <span class="status status-danger">{{ task.get_status_display }}</span>
+        {% elif task.status == "in_progress" %}
+            <span class="status status-warn">{{ task.get_status_display }}</span>
+        {% else %}
+            <span class="status status-muted">{{ task.get_status_display }}</span>
+        {% endif %}
+
+        <h1 class="doc-hero-title">{{ task.title }}</h1>
+    </section>
+
+    <div class="doc-info-grid">
+        <div class="doc-info">
+            <div class="doc-info-label">Объект</div>
+            <div class="doc-info-value">{{ task.mining_object|default:"-" }}</div>
+        </div>
+        <div class="doc-info">
+            <div class="doc-info-label">Лицензия</div>
+            <div class="doc-info-value">{{ task.license_object|default:"-" }}</div>
+        </div>
+        <div class="doc-info">
+            <div class="doc-info-label">Направление</div>
+            <div class="doc-info-value">{{ task.direction|default:"-" }}</div>
+        </div>
+        <div class="doc-info">
+            <div class="doc-info-label">Инстанция</div>
+            <div class="doc-info-value">{{ task.authority|default:"-" }}</div>
+        </div>
+        <div class="doc-info">
+            <div class="doc-info-label">Дедлайн</div>
+            <div class="doc-info-value">{{ task.deadline|date:"d.m.Y H:i"|default:"-" }}</div>
+        </div>
+        <div class="doc-info">
+            <div class="doc-info-label">Ответственный</div>
+            <div class="doc-info-value">{{ task.responsible.full_name|default:task.responsible|default:"-" }}</div>
+        </div>
+        <div class="doc-info">
+            <div class="doc-info-label">Наличие</div>
+            <div class="doc-info-value">{% if task.is_available %}Документ есть{% else %}Документа нет{% endif %}</div>
+        </div>
+        <div class="doc-info">
+            <div class="doc-info-label">Дата получения</div>
+            <div class="doc-info-value">{{ task.received_at|date:"d.m.Y H:i"|default:"-" }}</div>
+        </div>
+        <div class="doc-info">
+            <div class="doc-info-label">Обновлено</div>
+            <div class="doc-info-value">{{ task.updated_at|date:"d.m.Y H:i" }}</div>
+        </div>
+    </div>
+
+    <section class="doc-comment">
+        <div class="doc-info-label">Комментарий</div>
+        {% if task.comment %}
+            <p>{{ task.comment }}</p>
+        {% else %}
+            <p style="color:var(--muted);">Комментарий не заполнен.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

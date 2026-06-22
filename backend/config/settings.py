@@ -51,6 +51,11 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+        "documents": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
 }
 

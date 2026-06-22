@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Документы | CRM{% endblock %}
+
+{% block content %}
+<style>
+    .docs-workspace { width: min(100%, 1180px); }
+    .docs-toolbar {
+        display: grid;
+        grid-template-columns: 1.3fr repeat(4, minmax(140px, .7fr)) auto;
+        gap: 10px;
+        align-items: end;
+        margin-bottom: 16px;
+        padding: 14px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+    .docs-toolbar .field { gap: 4px; }
+    .docs-toolbar .button { min-height: 42px; }
+    .docs-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .docs-stat {
+        padding: 14px 16px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+    .docs-stat-value { font-size: 24px; font-weight: 750; line-height: 1; }
+    .docs-stat-label { margin-top: 4px; color: var(--muted); font-size: 12px; }
+    .docs-title-link { color: var(--text); }
+    .docs-title-link:hover { color: var(--primary); text-decoration: none; }
+    .docs-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; color: var(--muted); font-size: 12px; }
+    .docs-deadline { white-space: nowrap; font-weight: 600; }
+    .status-danger { color: #991b1b; background: #fee2e2; }
+    .status-warn { color: #92400e; background: #fef3c7; }
+    .docs-table { min-width: 980px; }
+    @media (max-width: 980px) {
+        .docs-toolbar { grid-template-columns: 1fr 1fr; }
+        .docs-toolbar .button { width: 100%; }
+        .docs-summary { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="docs-workspace">
+    <div class="workspace-header">
+        <div>
+            <h1 class="workspace-title">Документы</h1>
+            <p class="workspace-subtitle">Контроль обязательств, сроков, инстанций и ответственных.</p>
+        </div>
+        <a class="button button-auto" href="{% url 'documents:document_task_create' %}">
+            <svg width="14" height="14" fill="none" viewBox="0 0 14 14" stroke="currentColor" stroke-width="2">
+                <path d="M7 1v12M1 7h12" stroke-linecap="round"/>
+            </svg>
+            Добавить документ
+        </a>
+    </div>
+
+    <div class="docs-summary">
+        <div class="docs-stat">
+            <div class="docs-stat-value">{{ tasks|length }}</div>
+            <div class="docs-stat-label">Документов в текущей выборке</div>
+        </div>
+        <div class="docs-stat">
+            <div class="docs-stat-value">{{ objects|length }}</div>
+            <div class="docs-stat-label">Активных объектов</div>
+        </div>
+        <div class="docs-stat">
+            <div class="docs-stat-value">{{ directions|length }}</div>
+            <div class="docs-stat-label">Направлений работ</div>
+        </div>
+    </div>
+
+    <form class="docs-toolbar" method="get">
+        <div class="field">
+            <label for="q">Поиск</label>
+            <input id="q" type="search" name="q" value="{{ filters.q }}" placeholder="Документ, лицензия, инстанция">
+        </div>
+
+        <div class="field">
+            <label for="status">Статус</label>
+            <select id="status" name="status">
+                <option value="">Все</option>
+                {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="mining_object">Объект</label>
+            <select id="mining_object" name="mining_object">
+                <option value="">Все</option>
+                {% for object in objects %}
+                    <option value="{{ object.pk }}" {% if filters.mining_object == object.pk|stringformat:"s" %}selected{% endif %}>{{ object.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="direction">Направление</label>
+            <select id="direction" name="direction">
+                <option value="">Все</option>
+                {% for direction in directions %}
+                    <option value="{{ direction.pk }}" {% if filters.direction == direction.pk|stringformat:"s" %}selected{% endif %}>{{ direction.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="deadline">Срок</label>
+            <select id="deadline" name="deadline">
+                <option value="">Все</option>
+                <option value="week" {% if filters.deadline == "week" %}selected{% endif %}>7 дней</option>
+                <option value="overdue" {% if filters.deadline == "overdue" %}selected{% endif %}>Просрочено</option>
+                <option value="no_deadline" {% if filters.deadline == "no_deadline" %}selected{% endif %}>Без срока</option>
+            </select>
+        </div>
+
+        <button class="button button-auto" type="submit">Показать</button>
+    </form>
+
+    {% if tasks %}
+    <div class="table-wrap">
+        <table class="table docs-table">
+            <thead>
+                <tr>
+                    <th>Документ</th>
+                    <th>Объект</th>
+                    <th>Направление</th>
+                    <th>Инстанция</th>
+                    <th>Статус</th>
+                    <th>Дедлайн</th>
+                    <th>Ответственный</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                <tr>
+                    <td>
+                        <a class="docs-title-link" href="{% url 'documents:document_task_detail' task.pk %}">
+                            <strong>{{ task.title }}</strong>
+                        </a>
+                        <div class="docs-meta">
+                            <span>{{ task.license_object|default:"Лицензия не указана" }}</span>
+                            {% if task.is_available %}<span>Документ есть</span>{% else %}<span>Документа нет</span>{% endif %}
+                        </div>
+                    </td>
+                    <td>{{ task.mining_object|default:"-" }}</td>
+                    <td>{{ task.direction|default:"-" }}</td>
+                    <td>{{ task.authority|default:"-" }}</td>
+                    <td>
+                        {% if task.status == "done" %}
+                            <span class="status status-active">{{ task.get_status_display }}</span>
+                        {% elif task.status == "overdue" %}
+                            <span class="status status-danger">{{ task.get_status_display }}</span>
+                        {% elif task.status == "in_progress" %}
+                            <span class="status status-warn">{{ task.get_status_display }}</span>
+                        {% else %}
+                            <span class="status status-muted">{{ task.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if task.deadline %}
+                            <span class="docs-deadline">{{ task.deadline|date:"d.m.Y H:i" }}</span>
+                        {% else %}
+                            <span style="color:var(--muted);">-</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ task.responsible.full_name|default:task.responsible|default:"-" }}</td>
+                    <td>
+                        <div class="row-actions">
+                            <a href="{% url 'documents:document_task_detail' task.pk %}">Открыть</a>
+                            <a href="{% url 'documents:document_task_update' task.pk %}">Изменить</a>
+                            <a class="danger" href="{% url 'documents:document_task_delete' task.pk %}">Удалить</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        Документы не найдены. Измени фильтры или добавь первый документ.
+        <div class="mt-4">
+            <a class="button button-auto" href="{% url 'documents:document_task_create' %}">Добавить документ</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

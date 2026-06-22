@@ -13,6 +13,18 @@
     </div>
 
     <div class="dash-grid">
+        <a class="dash-card" href="{% url 'documents:document_task_list' %}">
+            <div class="dash-card-icon">
+                <svg width="20" height="20" fill="none" viewBox="0 0 20 20" stroke="currentColor" stroke-width="1.6">
+                    <path d="M5 2.5h7l3 3V17.5H5V2.5z" stroke-linejoin="round"/>
+                    <path d="M12 2.5v3h3" stroke-linejoin="round"/>
+                    <path d="M7.5 9h5M7.5 12h5M7.5 15h3" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="dash-card-title">Документы</div>
+            <div class="dash-card-sub">Сроки, инстанции и ответственные</div>
+        </a>
+
         <a class="dash-card" href="{% url 'job_title_list' %}">
             <div class="dash-card-icon">
                 <svg width="20" height="20" fill="none" viewBox="0 0 20 20" stroke="currentColor" stroke-width="1.6">

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Удалить документ | CRM{% endblock %}
+
+{% block content %}
+<style>
+    .delete-page { width: min(100%, 520px); }
+    .delete-panel {
+        padding: 24px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+    .delete-title { margin: 0 0 8px; font-size: 22px; }
+    .delete-text { margin: 0 0 20px; color: var(--muted); }
+    .delete-target {
+        padding: 12px 14px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        background: #f9fafb;
+        border: 1px solid var(--line);
+        font-weight: 650;
+    }
+    .delete-actions { display: flex; gap: 10px; }
+    .delete-actions .button { width: auto; flex: 1; }
+</style>
+
+<div class="delete-page">
+    <div class="delete-panel">
+        <h1 class="delete-title">Удалить документ</h1>
+        <p class="delete-text">Запись будет удалена из CRM. Это действие нельзя отменить.</p>
+
+        <div class="delete-target">{{ task.title }}</div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="delete-actions">
+                <a class="button button-outline" href="{% url 'documents:document_task_detail' task.pk %}">Отмена</a>
+                <button class="button button-danger" type="submit">Удалить</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

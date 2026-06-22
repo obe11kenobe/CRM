@@ -619,6 +619,16 @@
 
             <div class="nav-group-label">Управление</div>
 
+            <a href="{% url 'documents:document_task_list' %}"
+               class="nav-item {% if request.resolver_match.app_name == 'documents' %}active{% endif %}">
+                <svg width="15" height="15" fill="none" viewBox="0 0 15 15" stroke="currentColor" stroke-width="1.5">
+                    <path d="M3 1.5h6.5L12 4v9.5H3V1.5z" stroke-linejoin="round"/>
+                    <path d="M9.5 1.5V4H12" stroke-linejoin="round"/>
+                    <path d="M5 7h5M5 9.5h5M5 12h3" stroke-linecap="round"/>
+                </svg>
+                Документы
+            </a>
+
             <a href="{% url 'job_title_list' %}"
                class="nav-item {% if 'job_title' in request.resolver_match.url_name %}active{% endif %}">
                 <svg width="15" height="15" fill="none" viewBox="0 0 15 15" stroke="currentColor" stroke-width="1.5">
