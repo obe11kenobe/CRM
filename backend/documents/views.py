@@ -3,7 +3,7 @@ import tempfile
 from datetime import timedelta
 from pathlib import Path
 
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @login_required
+@permission_required("documents.view_documenttask", raise_exception=True)
 def document_task_list(request):
     tasks = DocumentTask.objects.select_related(
         'mining_object',
@@ -78,6 +79,10 @@ def document_task_list(request):
 
 
 @login_required
+@permission_required(
+    ("documents.add_documenttask", "documents.change_documenttask"),
+    raise_exception=True,
+)
 def document_import(request):
     result = None
 
@@ -130,6 +135,7 @@ def document_import(request):
 
 
 @login_required
+@permission_required("documents.change_documenttask", raise_exception=True)
 def document_assignment(request):
     tasks = DocumentTask.objects.filter(
         responsible__isnull=True,
@@ -206,6 +212,7 @@ def document_assignment(request):
 
 
 @login_required
+@permission_required("documents.view_documenttask", raise_exception=True)
 def document_task_detail(request, pk):
     task = get_object_or_404(
         DocumentTask.objects.select_related(
@@ -222,6 +229,7 @@ def document_task_detail(request, pk):
 
 
 @login_required
+@permission_required("documents.add_documenttask", raise_exception=True)
 def document_task_create(request):
     if request.method == 'POST':
         form = DocumentTaskForm(request.POST)
@@ -246,6 +254,7 @@ def document_task_create(request):
 
 
 @login_required
+@permission_required("documents.change_documenttask", raise_exception=True)
 def document_task_update(request, pk):
     task = get_object_or_404(DocumentTask, pk=pk)
 
@@ -273,6 +282,7 @@ def document_task_update(request, pk):
 
 
 @login_required
+@permission_required("documents.delete_documenttask", raise_exception=True)
 def document_task_delete(request, pk):
     task = get_object_or_404(DocumentTask, pk=pk)
 
@@ -292,6 +302,7 @@ def document_task_delete(request, pk):
 
 
 @login_required
+@permission_required("documents.delete_documenttask", raise_exception=True)
 def document_task_bulk_delete(request):
     if request.method != 'POST':
         return redirect('documents:document_task_list')

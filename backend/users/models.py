@@ -37,7 +37,11 @@ class CustomUser(AbstractUser):
         return self.username
 
 class JobTitle (models.Model):
-    job_title = models.CharField(max_length=100, verbose_name='Должность', blank=True, null=True)
+    job_title = models.CharField(
+        max_length=100,
+        verbose_name='Должность',
+        unique=True
+    )
     description = models.TextField(blank=True, null=True, verbose_name='Описание')
     parent = models.ForeignKey(
         'self',

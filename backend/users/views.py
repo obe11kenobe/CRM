@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import redirect
@@ -10,7 +10,7 @@ from django.views import View
 from django.views.generic import DeleteView, ListView, TemplateView, UpdateView
 from django.views.generic.edit import CreateView
 
-from .forms import CustomUserCreationForm, ProfileUserForm
+from .forms import CustomUserCreationForm, ProfileUserForm, JobTitleForm
 from .models import CustomUser, JobTitle
 
 import logging
@@ -78,27 +78,35 @@ class ActivationSuccessView(TemplateView):
 class ActivationInvalidView(TemplateView):
     template_name = 'registration/activation_invalid.html'
 
-class JobTitleViews(ListView):
+class JobTitleViews(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = JobTitle
     template_name = 'positions/jobtitle.html'
     context_object_name = "positions"
+    permission_required = 'users.view_jobtitle'
+    raise_exception = True
 
-class JobTitleCreateViews(CreateView):
+class JobTitleCreateViews(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = JobTitle
-    fields = "__all__"
+    form_class = JobTitleForm
     template_name = 'positions/jobtitle.html'
     success_url = reverse_lazy('job_title_list')
+    permission_required = 'users.add_jobtitle'
+    raise_exception = True
 
-class JobTitleUpdateViews(UpdateView):
+class JobTitleUpdateViews(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = JobTitle
-    fields = "__all__"
+    form_class = JobTitleForm
     template_name = 'positions/jobtitle.html'
     success_url = reverse_lazy('job_title_list')
+    permission_required = 'users.change_jobtitle'
+    raise_exception = True
 
-class JobTitleDeleteViews(DeleteView):
+class JobTitleDeleteViews(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = JobTitle
     template_name = 'positions/jobtitle.html'
     success_url = reverse_lazy('job_title_list')
+    permission_required = 'users.delete_jobtitle'
+    raise_exception = True
 
 class ProfileUserView(LoginRequiredMixin, UpdateView):
     model = CustomUser
