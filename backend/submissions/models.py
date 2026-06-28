@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
 class DocumentRoute(models.Model):
@@ -154,6 +155,34 @@ class SubmissionPackage(models.Model):
     )
     created_at =  models.DateTimeField(auto_now_add=True, verbose_name='Создано')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Обновлено')
+
+    def clean(self):
+        errors = {}
+
+        if self.status == self.Status.SENT and not self.sent_at:
+            errors['sent_at'] = 'Нужно обязательно заполнить поле "Дата отправки".'
+
+        if self.status == self.Status.REGISTERED and not self.registered_at:
+            errors['registered_at'] = 'Нужно обязательно заполнить поле "Дата регистрации".'
+
+        if (
+            self.status in (self.Status.REGISTERED, self.Status.CLOSED)
+            and not self.agency_incoming_number
+            and not self.proof_file
+        ):
+            errors['agency_incoming_number'] = (
+                'Для регистрации или закрытия нужен входящий номер или файл доказательства.'
+            )
+            errors['proof_file'] = (
+                'Для регистрации или закрытия нужен входящий номер или файл доказательства.'
+            )
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.task} - {self.route}'
