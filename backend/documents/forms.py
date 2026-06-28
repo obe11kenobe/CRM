@@ -43,6 +43,7 @@ class DocumentTaskForm(forms.ModelForm):
             'license_object',
             'direction',
             'authority',
+            'route',
             'status',
             'is_available',
             'received_at',
@@ -69,6 +70,7 @@ class DocumentTaskForm(forms.ModelForm):
         self.fields['license_object'].queryset = self.fields['license_object'].queryset.order_by('number')
         self.fields['direction'].queryset = self.fields['direction'].queryset.order_by('name')
         self.fields['authority'].queryset = self.fields['authority'].queryset.order_by('name')
+        self.fields['route'].queryset = self.fields['route'].queryset.order_by('route_id')
         self.fields['responsible'].queryset = self.fields['responsible'].queryset.order_by('username')
 
 

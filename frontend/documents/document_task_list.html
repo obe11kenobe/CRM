@@ -204,6 +204,7 @@
                         </a>
                         <div class="docs-meta">
                             <span>{{ task.license_object|default:"Лицензия не указана" }}</span>
+                            <span>{{ task.route|default:"Маршрут не указан" }}</span>
                             {% if task.is_available %}<span>Документ есть</span>{% else %}<span>Документа нет</span>{% endif %}
                         </div>
                     </td>

@@ -104,6 +104,14 @@ class DocumentTask(models.Model):
         related_name='tasks',
         verbose_name='Инстанция',
     )
+    route = models.ForeignKey(
+        'submissions.DocumentRoute',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='document_tasks',
+        verbose_name='Маршрут автоматизации',
+    )
     title = models.CharField(max_length=100, verbose_name='Название документа')
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PLANNED)
     is_available = models.BooleanField(default=False, verbose_name='Наличие документа')

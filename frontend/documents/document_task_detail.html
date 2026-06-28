@@ -114,6 +114,10 @@
             <div class="doc-info-value">{{ task.authority|default:"-" }}</div>
         </div>
         <div class="doc-info">
+            <div class="doc-info-label">Маршрут</div>
+            <div class="doc-info-value">{{ task.route|default:"-" }}</div>
+        </div>
+        <div class="doc-info">
             <div class="doc-info-label">Дедлайн</div>
             <div class="doc-info-value">{{ task.deadline|date:"d.m.Y H:i"|default:"-" }}</div>
         </div>

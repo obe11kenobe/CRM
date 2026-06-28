@@ -49,7 +49,7 @@
 <div class="doc-form-page">
     <div class="page-header">
         <h1 class="page-title">{% if task %}Редактировать документ{% else %}Новый документ{% endif %}</h1>
-        <p class="page-sub">Заполни документ, срок, инстанцию и ответственного.</p>
+        <p class="page-sub">Заполни документ, маршрут автоматизации, срок, инстанцию и ответственного.</p>
     </div>
 
     <form class="doc-form-shell" method="post">
@@ -88,6 +88,12 @@
                 {{ form.authority.label_tag }}
                 {{ form.authority }}
                 {{ form.authority.errors }}
+            </div>
+
+            <div class="field">
+                {{ form.route.label_tag }}
+                {{ form.route }}
+                {{ form.route.errors }}
             </div>
 
             <div class="field">
