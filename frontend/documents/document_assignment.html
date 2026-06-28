@@ -154,6 +154,17 @@
                 </div>
                 {% endif %}
             </form>
+            {% if page_obj.has_other_pages %}
+            <nav class="pagination" aria-label="Страницы документов без исполнителя">
+                {% if page_obj.has_previous %}
+                    <a href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}">Назад</a>
+                {% endif %}
+                <span class="pagination-current">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                    <a href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}">Вперед</a>
+                {% endif %}
+            </nav>
+            {% endif %}
         </section>
 
         <aside class="assign-panel">
@@ -162,7 +173,7 @@
                 <p class="assign-sub">Назначение применится ко всем выбранным документам.</p>
             </div>
             <div class="assign-side">
-                <div class="assign-count">В выборке документов: {{ tasks|length }}</div>
+                <div class="assign-count">В выборке документов: {{ total_tasks }}</div>
                 <div class="field">
                     {{ form.responsible.label_tag }}
                     <select name="{{ form.responsible.html_name }}" id="{{ form.responsible.id_for_label }}" form="assign-form">

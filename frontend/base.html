@@ -73,6 +73,8 @@
 
         body.is-auth .topbar { display: none; }
 
+        .mobile-authbar { display: none; }
+
         .topbar-brand {
             font-weight: 800;
             font-size: 17px;
@@ -477,6 +479,34 @@
         .status-active { color: #15803d; background: #dcfce7; }
         .status-muted  { color: #6b7280; background: #f3f4f6; }
 
+        /* Pagination */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 16px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .pagination a,
+        .pagination-current {
+            display: inline-flex;
+            align-items: center;
+            min-height: 34px;
+            padding: 6px 12px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+        }
+
+        .pagination a:hover {
+            background: var(--bg);
+            text-decoration: none;
+        }
+
         /* ─── PROFILE ─────────────────────────────── */
 
         .profile-photo {
@@ -577,8 +607,57 @@
         /* ─── MOBILE ───────────────────────────────── */
 
         @media (max-width: 640px) {
-            body.is-auth .page { grid-template-columns: 1fr; }
+            body.is-auth .page { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
             body.is-auth .sidebar { display: none; }
+            body.is-auth .mobile-authbar {
+                display: grid;
+                gap: 8px;
+                position: sticky;
+                top: 0;
+                z-index: 20;
+                padding: 10px 12px;
+                background: rgba(255,255,255,.94);
+                border-bottom: 1px solid var(--line);
+                backdrop-filter: blur(10px);
+            }
+            .mobile-authbar-top {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+            }
+            .mobile-authbar-brand {
+                font-weight: 800;
+                color: var(--text);
+            }
+            .mobile-authbar-user {
+                max-width: 52vw;
+                color: var(--muted);
+                font-size: 12px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .mobile-authbar-nav {
+                display: flex;
+                gap: 8px;
+                overflow-x: auto;
+                padding-bottom: 2px;
+            }
+            .mobile-authbar-nav a {
+                flex: 0 0 auto;
+                padding: 7px 10px;
+                border: 1px solid var(--line);
+                border-radius: 6px;
+                background: var(--panel);
+                color: var(--text);
+                font-size: 13px;
+                font-weight: 600;
+            }
+            .mobile-authbar-nav a:hover {
+                background: var(--bg);
+                text-decoration: none;
+            }
             body.is-auth .main { padding: 20px 16px; }
             body:not(.is-auth) .topbar { padding: 0 18px; }
             body:not(.is-auth) .main { padding: 28px 16px; align-items: start; }
@@ -687,6 +766,20 @@
             </form>
         </div>
     </aside>
+
+    <header class="mobile-authbar" aria-label="Мобильная навигация">
+        <div class="mobile-authbar-top">
+            <a class="mobile-authbar-brand" href="{% url 'home' %}">CRM</a>
+            <span class="mobile-authbar-user">{{ user.full_name }}</span>
+        </div>
+        <nav class="mobile-authbar-nav">
+            <a href="{% url 'home' %}">Главная</a>
+            <a href="{% url 'documents:document_task_list' %}">Документы</a>
+            <a href="{% url 'documents:document_assignment' %}">Назначить</a>
+            <a href="{% url 'job_title_list' %}">Должности</a>
+            <a href="{% url 'profile' %}">Профиль</a>
+        </nav>
+    </header>
 
     {% else %}
     <header class="topbar">

@@ -3,7 +3,7 @@ from django.db import models
 
 
 class MiningObject(models.Model):
-    name = models.CharField(max_length=100, verbose_name='Название')
+    name = models.CharField(max_length=100, unique=True, verbose_name='Название')
     description = models.TextField(blank=True, null=True, verbose_name='Описание')
     is_active = models.BooleanField(default=True, verbose_name='Активен')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создан')
@@ -33,9 +33,18 @@ class License(models.Model):
             return f'{self.number} - {self.mining_object}'
         return self.number
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['mining_object', 'number'],
+                condition=models.Q(mining_object__isnull=False) & ~models.Q(number=''),
+                name='unique_license_per_object',
+            ),
+        ]
+
 
 class DocumentDirection(models.Model):
-    name = models.CharField(max_length=100, verbose_name='Назначение')
+    name = models.CharField(max_length=100, unique=True, verbose_name='Назначение')
     description = models.TextField(blank=True, verbose_name='Описание назначения')
 
     def __str__(self):
@@ -43,7 +52,7 @@ class DocumentDirection(models.Model):
 
 
 class Authority(models.Model):
-    name = models.CharField(max_length=100, verbose_name='Название инстанции')
+    name = models.CharField(max_length=100, unique=True, verbose_name='Название инстанции')
     description = models.TextField(blank=True, verbose_name='Описание инстанции')
     email = models.CharField(max_length=50, blank=True, verbose_name='Почта')
     phone = models.CharField(max_length=20, blank=True, verbose_name='Номер телефона')
@@ -114,3 +123,16 @@ class DocumentTask(models.Model):
 
     def __str__(self):
         return self.title
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['mining_object', 'license_object', 'direction', 'title'],
+                name='unique_document_task_plan_item',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['status', 'deadline'], name='doc_task_status_deadline_idx'),
+            models.Index(fields=['responsible', 'deadline'], name='doc_task_resp_deadline_idx'),
+            models.Index(fields=['mining_object', 'direction'], name='doc_task_object_dir_idx'),
+        ]

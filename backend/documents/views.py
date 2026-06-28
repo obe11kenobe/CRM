@@ -4,6 +4,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from django.contrib.auth.decorators import login_required, permission_required
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -13,6 +14,17 @@ from .importers import import_document_plan
 from .models import DocumentDirection, DocumentTask, MiningObject
 
 logger = logging.getLogger(__name__)
+
+
+def _paginate_queryset(request, queryset, per_page=50):
+    paginator = Paginator(queryset, per_page)
+    return paginator.get_page(request.GET.get('page'))
+
+
+def _querystring_without_page(request):
+    params = request.GET.copy()
+    params.pop('page', None)
+    return params.urlencode()
 
 
 @login_required
@@ -60,9 +72,13 @@ def document_task_list(request):
         tasks = tasks.filter(deadline__isnull=True)
 
     tasks = tasks.order_by('deadline', 'title')
+    page_obj = _paginate_queryset(request, tasks)
 
     context = {
-        'tasks': tasks,
+        'tasks': page_obj.object_list,
+        'page_obj': page_obj,
+        'total_tasks': page_obj.paginator.count,
+        'querystring': _querystring_without_page(request),
         'objects': MiningObject.objects.filter(is_active=True).order_by('name'),
         'directions': DocumentDirection.objects.order_by('name'),
         'statuses': DocumentTask.Status.choices,
@@ -195,9 +211,14 @@ def document_assignment(request):
     else:
         form = DocumentAssignmentForm(tasks_queryset=tasks)
 
+    page_obj = _paginate_queryset(request, tasks)
+
     context = {
         'form': form,
-        'tasks': tasks,
+        'tasks': page_obj.object_list,
+        'page_obj': page_obj,
+        'total_tasks': page_obj.paginator.count,
+        'querystring': _querystring_without_page(request),
         'assigned_count': assigned_count,
         'objects': MiningObject.objects.filter(is_active=True).order_by('name'),
         'directions': DocumentDirection.objects.order_by('name'),
