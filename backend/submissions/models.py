@@ -19,7 +19,7 @@ class DocumentRoute(models.Model):
         max_length=10,
         db_index=True,
         unique=True,
-        verbose_name='Route ID',
+        verbose_name='Route ID'
     )
     name = models.CharField(
         max_length=255,
@@ -84,3 +84,81 @@ class DocumentRoute(models.Model):
         ordering = ["route_id"]
         verbose_name = "Маршрут документа"
         verbose_name_plural = "Маршруты документов"
+
+class SubmissionPackage(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Черновик"
+        READY = "ready", "Готов к подаче"
+        SENT = "sent", "Отправлено"
+        REGISTERED = "registered", "Зарегистрировано"
+        RESPONSE_RECEIVED = "response_received", "Получен ответ"
+        REJECTED = "rejected", "Отказ / замечания"
+        CLOSED = "closed", "Закрыто"
+        CANCELLED = "cancelled", "Отменено"
+
+    task = models.ForeignKey(
+        'documents.DocumentTask',
+        on_delete=models.CASCADE,
+        related_name='packages',
+        verbose_name='Документ'
+    )
+    route = models.ForeignKey(
+        'submissions.DocumentRoute',
+        on_delete=models.PROTECT,
+        related_name='packages',
+        verbose_name='Маршрут'
+    )
+    status = models.CharField(
+        max_length=30,
+        choices=Status.choices,
+        default=Status.DRAFT,
+        verbose_name='Статус подачи'
+    )
+    outgoing_number = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Исходящий номер'
+    )
+    sent_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Дата отправки'
+    )
+    agency_incoming_number = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Входящий номер ведомства',
+    )
+    registered_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Дата регистрации'
+    )
+    proof_file = models.FileField(
+        upload_to="submission_proofs/",
+        blank=True,
+        null=True,
+        verbose_name="Доказательство подачи",
+    )
+    comment = models.TextField(
+        max_length=1000,
+        blank=True,
+    )
+    created_by = models.ForeignKey(
+        "users.CustomUser",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="created_submission_packages",
+        verbose_name="Создал",
+    )
+    created_at =  models.DateTimeField(auto_now_add=True, verbose_name='Создано')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Обновлено')
+
+    def __str__(self):
+        return f'{self.task} - {self.route}'
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Пакет отправки'
+        verbose_name_plural = 'Пакеты отправки'
