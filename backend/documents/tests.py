@@ -6,7 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from documents.models import DocumentDirection, DocumentTask, License, MiningObject
+from documents.models import Authority, DocumentDirection, DocumentTask, License, MiningObject
 
 
 class DocumentPermissionTests(TestCase):
@@ -131,3 +131,33 @@ class LicenseValidationTests(TestCase):
 
         self.assertFalse(license_object.is_expired)
         self.assertTrue(license_object.is_expiring_soon(days=90))
+
+
+class AuthorityValidationTests(TestCase):
+    def test_single_invalid_email_is_rejected(self):
+        authority = Authority(name="Roskomnadzor", email="not-an-email")
+
+        with self.assertRaises(ValidationError):
+            authority.full_clean()
+
+    def test_multiple_valid_emails_are_accepted(self):
+        authority = Authority.objects.create(
+            name="Rosnedra",
+            email="ural@rosnedra.gov.ru; sverdlovsk@rosnedra.gov.ru",
+        )
+
+        self.assertEqual(authority.email, "ural@rosnedra.gov.ru; sverdlovsk@rosnedra.gov.ru")
+
+    def test_one_invalid_email_among_several_is_rejected(self):
+        authority = Authority(
+            name="Rosvodresursy",
+            email="valid@example.com; not-valid",
+        )
+
+        with self.assertRaises(ValidationError):
+            authority.full_clean()
+
+    def test_blank_email_is_allowed(self):
+        authority = Authority.objects.create(name="Administration")
+
+        self.assertEqual(authority.email, "")

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.core.validators import EmailValidator
 from django.utils import timezone
 
 
@@ -85,14 +86,73 @@ class DocumentDirection(models.Model):
 
 
 class Authority(models.Model):
+    class Block(models.TextChoices):
+        SUBSOIL = "subsoil", "Недра / лицензии / техпроекты"
+        FOREST = "forest", "Лесной фонд"
+        LAND = "land", "Земля / муниципалитет"
+        WATER = "water", "Водопользование"
+        ECOLOGY = "ecology", "Экология / НВОС"
+        SANITARY = "sanitary", "Санитарно-эпидемиологический блок"
+        EMERGENCY = "emergency", "ГО и ЧС"
+        OTHER = "other", "Прочее"
+
+    class PreferredChannel(models.TextChoices):
+        GOSUSLUGI = "gosuslugi", "ЕПГУ"
+        AGENCY_ACCOUNT = "agency_account", "ЛК ведомства"
+        EDO = "edo", "ЭДО"
+        OFFICE = "office", "Канцелярия"
+        POST = "post", "Почта с описью"
+        EMAIL_DUPLICATE = "email_duplicate", "E-mail дубль"
+        MANUAL = "manual", "Ручная подача"
+
     name = models.CharField(max_length=100, unique=True, verbose_name='Название инстанции')
     description = models.TextField(blank=True, verbose_name='Описание инстанции')
     email = models.CharField(max_length=50, blank=True, verbose_name='Почта')
     phone = models.CharField(max_length=20, blank=True, verbose_name='Номер телефона')
     address = models.CharField(max_length=200, blank=True, verbose_name='Адрес')
 
+    block = models.CharField(
+        max_length=20,
+        choices=Block.choices,
+        blank=True,
+        verbose_name='Блок'
+    )
+
+    preferred_channel = models.CharField(
+        max_length=30,
+        choices=PreferredChannel.choices,
+        blank=True,
+        verbose_name='Канал подачи по умолчанию'
+    )
+
+    def clean(self):
+        if not self.email:
+            return
+
+        validator = EmailValidator(message='Некорректный email: %(value)s')
+        errors = []
+
+        for raw_address in self.email.split(';'):
+            address = raw_address.strip()
+            if not address:
+                continue
+            try:
+                validator(address)
+            except ValidationError:
+                errors.append(f'Некорректный email: {address}')
+
+        if errors:
+            raise ValidationError({'email': errors})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['name']
 
 
 class DocumentTask(models.Model):
