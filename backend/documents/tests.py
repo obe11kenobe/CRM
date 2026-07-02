@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from documents.models import Authority, DocumentDirection, DocumentTask, License, MiningObject
+from submissions.models import DocumentRoute
 
 
 class DocumentPermissionTests(TestCase):
@@ -161,3 +162,52 @@ class AuthorityValidationTests(TestCase):
         authority = Authority.objects.create(name="Administration")
 
         self.assertEqual(authority.email, "")
+
+
+class DocumentTaskRouteAutoAssignTests(TestCase):
+    def setUp(self):
+        self.authority = Authority.objects.create(name="Уралнедра")
+        self.route = DocumentRoute.objects.create(
+            route_id="T03",
+            name="Технический проект",
+            document_process="Технический проект",
+            authority=self.authority,
+        )
+
+    def test_route_and_authority_are_auto_assigned(self):
+        task = DocumentTask.objects.create(title="Технический проект 1")
+
+        self.assertEqual(task.route, self.route)
+        self.assertEqual(task.authority, self.authority)
+
+    def test_manual_route_is_not_overridden(self):
+        other_authority = Authority.objects.create(name="Другая инстанция")
+        other_route = DocumentRoute.objects.create(
+            route_id="T04",
+            name="Горный отвод",
+            document_process="Горный отвод",
+            authority=other_authority,
+        )
+
+        task = DocumentTask.objects.create(
+            title="Технический проект 1",
+            route=other_route,
+        )
+
+        self.assertEqual(task.route, other_route)
+
+    def test_manual_authority_is_not_overridden(self):
+        other_authority = Authority.objects.create(name="Другая инстанция")
+
+        task = DocumentTask.objects.create(
+            title="Технический проект 1",
+            authority=other_authority,
+        )
+
+        self.assertEqual(task.route, self.route)
+        self.assertEqual(task.authority, other_authority)
+
+    def test_no_match_leaves_route_empty(self):
+        task = DocumentTask.objects.create(title="Совсем другой документ")
+
+        self.assertIsNone(task.route)

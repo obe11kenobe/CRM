@@ -86,6 +86,25 @@ class DocumentRoute(models.Model):
         verbose_name = "Маршрут документа"
         verbose_name_plural = "Маршруты документов"
 
+    @classmethod
+    def match_for_document(cls, title):
+        if not title:
+            return None
+
+        title_lower = title.lower()
+
+        for route in cls.objects.filter(is_active=True):
+            keywords = [
+                keyword.strip().lower()
+                for keyword in route.document_process.split(';')
+                if keyword.strip()
+            ]
+
+            if any(keyword in title_lower for keyword in keywords):
+                return route
+
+        return None
+
 class SubmissionPackage(models.Model):
     class Status(models.TextChoices):
         DRAFT = "draft", "Черновик"

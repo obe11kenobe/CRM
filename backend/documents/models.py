@@ -222,6 +222,18 @@ class DocumentTask(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
 
+    def save(self, *args, **kwargs):
+        if not self.route_id and self.title:
+            from submissions.models import DocumentRoute
+
+            matched_route = DocumentRoute.match_for_document(self.title)
+            if matched_route:
+                self.route = matched_route
+                if not self.authority_id:
+                    self.authority = matched_route.authority
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.title
 
