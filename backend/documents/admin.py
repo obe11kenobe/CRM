@@ -41,7 +41,8 @@ class DocumentDirectionAdmin(admin.ModelAdmin):
 
 @admin.register(Authority)
 class AuthorityAdmin(admin.ModelAdmin):
-    list_display = ('name', 'email', 'phone')
+    list_display = ('name', 'block', 'preferred_channel', 'email', 'phone')
+    list_filter = ('block', 'preferred_channel')
     search_fields = ('name', 'email', 'phone', 'address')
 
 
