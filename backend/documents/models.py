@@ -1,13 +1,25 @@
 from django.conf import settings
 from django.db import models
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 
 class MiningObject(models.Model):
+    class NvosCategory(models.TextChoices):
+        FIRST = "I", "I категория"
+        SECOND = "II", "II категория"
+        THIRD = "III", "III категория"
+        FOURTH = "IV", "IV категория"
+
     name = models.CharField(max_length=100, unique=True, verbose_name='Название')
     description = models.TextField(blank=True, null=True, verbose_name='Описание')
     is_active = models.BooleanField(default=True, verbose_name='Активен')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создан')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Обновлен')
+
+    cadastral_number = models.CharField(max_length=50, blank=True, verbose_name='Кадастровый номер участка')
+    municipality = models.CharField(max_length=100, blank=True, verbose_name='Муниципальное образование')
+    nvos_category = models.CharField(max_length=5, choices=NvosCategory.choices, blank=True, verbose_name='Категория НВОС')
 
     def __str__(self):
         return self.name
@@ -27,6 +39,27 @@ class License(models.Model):
     issued_at = models.DateTimeField(blank=True, null=True, verbose_name='Дата начала')
     expires_at = models.DateTimeField(blank=True, null=True, verbose_name='Дата окончания')
     comment = models.TextField(blank=True, null=True, verbose_name='Комментарий')
+
+    def clean(self):
+        if self.issued_at and self.expires_at and self.expires_at < self.issued_at:
+            raise ValidationError({
+                'expires_at': 'Дата окончания не может быть раньше даты начала.',
+            })
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    @property
+    def is_expired(self):
+        if not self.expires_at:
+            return False
+        return self.expires_at < timezone.now()
+
+    def is_expiring_soon(self, days=90):
+        if not self.expires_at:
+            return False
+        return timezone.now() <= self.expires_at  <= timezone.now() + timezone.timedelta(days=days)
 
     def __str__(self):
         if self.mining_object:
