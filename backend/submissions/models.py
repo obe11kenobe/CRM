@@ -164,6 +164,11 @@ class SubmissionPackage(models.Model):
         max_length=1000,
         blank=True,
     )
+    field_values = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Значения полей формы'
+    )
     created_by = models.ForeignKey(
         "users.CustomUser",
         on_delete=models.SET_NULL,

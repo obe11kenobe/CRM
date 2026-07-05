@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Маршрут не определён | CRM{% endblock %}
+
+{% block content %}
+<div class="doc-form-page">
+    <div class="page-header">
+        <h1 class="page-title">Маршрут не определён</h1>
+        <p class="page-sub">
+            У документа «{{ task.title }}» не выбран маршрут автоматизации, поэтому форму заполнить нельзя.
+            Укажи маршрут на карточке документа вручную или проверь, что его название совпадает с одним из маршрутов реестра.
+        </p>
+    </div>
+
+    <a class="button button-outline" href="{% url 'documents:document_task_detail' task.pk %}">Назад к документу</a>
+</div>
+{% endblock %}
