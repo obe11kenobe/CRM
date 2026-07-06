@@ -303,3 +303,46 @@ class PackageStatusViewTests(TestCase):
         package = SubmissionPackage.objects.get(task=self.task, route=self.route)
         self.assertEqual(package.status, "ready")
         self.assertEqual(set(package.confirmed_attachments), {"license_file", "power_of_attorney"})
+
+
+class PackageListViewTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="auditor", password="password123")
+        self.user.user_permissions.add(Permission.objects.get(codename="view_submissionpackage"))
+        self.client.force_login(self.user)
+
+        self.authority = Authority.objects.create(name="Уралнедра")
+        self.route = DocumentRoute.objects.create(
+            route_id="T08",
+            name="Маркшейдерская лицензия (маршрут)",
+            document_process="Лицензия на маркшейдерские работы",
+            authority=self.authority,
+        )
+        self.task = DocumentTask.objects.create(title="Лицензия на маркшейдерские работы")
+        self.package = SubmissionPackage.objects.create(task=self.task, route=self.route)
+
+    def test_list_shows_existing_package(self):
+        response = self.client.get(reverse("submissions:package_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.task.title)
+
+    def test_filter_by_status_excludes_non_matching_packages(self):
+        response = self.client.get(reverse("submissions:package_list"), {"status": "sent"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, self.task.title)
+
+    def test_filter_by_route_includes_matching_package(self):
+        response = self.client.get(reverse("submissions:package_list"), {"route": self.route.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.task.title)
+
+    def test_requires_view_permission(self):
+        other_user = get_user_model().objects.create_user(username="noperm", password="password123")
+        self.client.force_login(other_user)
+
+        response = self.client.get(reverse("submissions:package_list"))
+
+        self.assertEqual(response.status_code, 403)

@@ -249,3 +249,20 @@ class DocumentTask(models.Model):
             models.Index(fields=['responsible', 'deadline'], name='doc_task_resp_deadline_idx'),
             models.Index(fields=['mining_object', 'direction'], name='doc_task_object_dir_idx'),
         ]
+
+class DeadlineReminder(models.Model):
+    task = models.ForeignKey(
+        DocumentTask,
+        on_delete=models.CASCADE,
+        related_name='reminders'
+    )
+    threshold_days = models.IntegerField()
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['task', 'threshold_days'],
+                name='unique_task_deadline_reminder',
+            )
+        ]

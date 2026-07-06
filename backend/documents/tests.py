@@ -1,12 +1,14 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
+from django.core import mail
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.db import IntegrityError
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from documents.models import Authority, DocumentDirection, DocumentTask, License, MiningObject
+from documents.models import Authority, DeadlineReminder, DocumentDirection, DocumentTask, License, MiningObject
 from submissions.models import DocumentRoute
 
 
@@ -211,3 +213,64 @@ class DocumentTaskRouteAutoAssignTests(TestCase):
         task = DocumentTask.objects.create(title="Совсем другой документ")
 
         self.assertIsNone(task.route)
+
+
+class SendDeadlineRemindersTests(TestCase):
+    def setUp(self):
+        self.responsible = get_user_model().objects.create_user(
+            username="responsible",
+            password="password123",
+            email="responsible@example.com",
+        )
+
+    def _create_task_with_deadline(self, days_from_now, title="Task with deadline"):
+        return DocumentTask.objects.create(
+            title=title,
+            deadline=timezone.now() + timezone.timedelta(days=days_from_now),
+            responsible=self.responsible,
+        )
+
+    def test_sends_reminder_when_deadline_matches_threshold(self):
+        task = self._create_task_with_deadline(30)
+
+        call_command("send_deadline_reminders")
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(task.title, mail.outbox[0].message().as_string())
+        self.assertTrue(DeadlineReminder.objects.filter(task=task, threshold_days=30).exists())
+
+    def test_no_reminder_when_deadline_does_not_match_threshold(self):
+        self._create_task_with_deadline(45)
+
+        call_command("send_deadline_reminders")
+
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertFalse(DeadlineReminder.objects.exists())
+
+    def test_reminder_is_not_sent_twice_for_same_threshold(self):
+        task = self._create_task_with_deadline(7)
+
+        call_command("send_deadline_reminders")
+        call_command("send_deadline_reminders")
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(DeadlineReminder.objects.filter(task=task, threshold_days=7).count(), 1)
+
+    def test_no_reminder_when_task_has_no_responsible(self):
+        DocumentTask.objects.create(
+            title="No responsible",
+            deadline=timezone.now() + timezone.timedelta(days=14),
+        )
+
+        call_command("send_deadline_reminders")
+
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_done_tasks_are_excluded(self):
+        task = self._create_task_with_deadline(60, title="Done task")
+        task.status = DocumentTask.Status.DONE
+        task.save()
+
+        call_command("send_deadline_reminders")
+
+        self.assertEqual(len(mail.outbox), 0)

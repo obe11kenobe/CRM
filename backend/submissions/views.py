@@ -1,10 +1,12 @@
 from django.contrib.auth.decorators import login_required, permission_required
 from django.shortcuts import get_object_or_404, redirect, render
 
+from django.core.paginator import Paginator
+
 from documents.models import DocumentTask
 
 from .forms import RouteFieldsForm, SubmissionPackageForm
-from .models import SubmissionPackage
+from .models import SubmissionPackage, DocumentRoute
 
 def _serialize_value(value):
     if hasattr(value, 'isoformat'):
@@ -64,3 +66,38 @@ def package_status_form(request, task_id):
         form = SubmissionPackageForm(route=task.route, instance=package)
 
     return render(request, 'submissions/package_status_form.html', {'form': form, 'task': task})
+
+def _paginate_queryset(request, queryset, per_page=50):
+    paginator = Paginator(queryset, per_page)
+    return paginator.get_page(request.GET.get('page'))
+
+@login_required
+@permission_required('submissions.view_submissionpackage', raise_exception=True)
+def package_list(request):
+    tasks = SubmissionPackage.objects.select_related(
+        'task',
+        'route',
+        'created_by'
+    )
+
+    status = request.GET.get('status', '').strip()
+    route = request.GET.get('route','').strip()
+
+    if status:
+        tasks = tasks.filter(status=status)
+
+    if route:
+        tasks = tasks.filter(route_id=route)
+
+    page_obj = _paginate_queryset(request, tasks)
+
+    context = {
+        'packages': page_obj.object_list,
+        'page_obj': page_obj,
+        'filters': {'status': status, 'route': route},
+        'total_packages': page_obj.paginator.count,
+        'statuses': SubmissionPackage.Status.choices,
+        'routes': DocumentRoute.objects.all()
+    }
+
+    return render(request, 'submissions/package_list.html', context)

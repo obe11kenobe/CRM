@@ -731,6 +731,15 @@
                 Документы
             </a>
 
+            <a href="{% url 'submissions:package_list' %}"
+               class="nav-item {% if request.resolver_match.app_name == 'submissions' %}active{% endif %}">
+                <svg width="15" height="15" fill="none" viewBox="0 0 15 15" stroke="currentColor" stroke-width="1.5">
+                    <path d="M2 2h11v11H2z" stroke-linejoin="round"/>
+                    <path d="M4.5 5.5h6M4.5 8h6M4.5 10.5h3.5" stroke-linecap="round"/>
+                </svg>
+                Журнал подачи
+            </a>
+
             <a href="{% url 'job_title_list' %}"
                class="nav-item {% if 'job_title' in request.resolver_match.url_name %}active{% endif %}">
                 <svg width="15" height="15" fill="none" viewBox="0 0 15 15" stroke="currentColor" stroke-width="1.5">
@@ -799,6 +808,7 @@
             <a href="{% url 'home' %}">Главная</a>
             <a href="{% url 'documents:document_task_list' %}">Документы</a>
             <a href="{% url 'documents:document_assignment' %}">Назначить</a>
+            <a href="{% url 'submissions:package_list' %}">Журнал подачи</a>
             <a href="{% url 'job_title_list' %}">Должности</a>
             <a href="{% url 'profile' %}">Профиль</a>
         </nav>
