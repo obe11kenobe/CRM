@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Подача по маршруту {{ task.route.route_id }} | CRM{% endblock %}
+
+{% block content %}
+<style>
+    .route-form-page { width: min(100%, 860px); }
+    .route-form-shell {
+        display: grid;
+        gap: 18px;
+        padding: 22px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+    .route-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+    .route-form-wide { grid-column: 1 / -1; }
+    .route-form-section-title {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: var(--muted);
+    }
+    .attachment-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 42px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+    }
+    .attachment-check input { width: auto; min-height: auto; }
+    .route-form-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding-top: 6px;
+        border-top: 1px solid var(--line);
+    }
+    .route-form-actions .button { width: auto; }
+    @media (max-width: 760px) {
+        .route-form-grid { grid-template-columns: 1fr; }
+        .route-form-actions { flex-direction: column-reverse; }
+        .route-form-actions .button { width: 100%; }
+    }
+</style>
+
+<div class="route-form-page">
+    <div class="page-header">
+        <h1 class="page-title">Подача по маршруту {{ task.route.route_id }} — {{ task.route.name }}</h1>
+        <p class="page-sub">Документ: «{{ task.title }}». Инстанция: {{ task.authority|default:"-" }}.</p>
+    </div>
+
+    <form class="route-form-shell" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            {{ form.non_field_errors }}
+        {% endif %}
+
+        <div class="route-form-grid">
+            <div class="field">
+                {{ form.status.label_tag }}
+                {{ form.status }}
+                {{ form.status.errors }}
+            </div>
+            <div class="field">
+                {{ form.outgoing_number.label_tag }}
+                {{ form.outgoing_number }}
+                {{ form.outgoing_number.errors }}
+            </div>
+            <div class="field">
+                {{ form.sent_at.label_tag }}
+                {{ form.sent_at }}
+                {{ form.sent_at.errors }}
+            </div>
+            <div class="field">
+                {{ form.agency_incoming_number.label_tag }}
+                {{ form.agency_incoming_number }}
+                {{ form.agency_incoming_number.errors }}
+            </div>
+            <div class="field">
+                {{ form.registered_at.label_tag }}
+                {{ form.registered_at }}
+                {{ form.registered_at.errors }}
+            </div>
+            <div class="field">
+                {{ form.proof_file.label_tag }}
+                {{ form.proof_file }}
+                {{ form.proof_file.errors }}
+            </div>
+            <div class="field route-form-wide">
+                {{ form.comment.label_tag }}
+                {{ form.comment }}
+                {{ form.comment.errors }}
+            </div>
+        </div>
+
+        {% if task.route.required_attachments %}
+            <div>
+                <p class="route-form-section-title">Комплектность вложений</p>
+                <div class="route-form-grid" style="margin-top:10px;">
+                    {% for field in form %}
+                        {% if field.name in task.route.required_attachments %}
+                            <label class="attachment-check">
+                                {{ field }}
+                                <span>{{ field.label }}</span>
+                            </label>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="route-form-actions">
+            <a class="button button-outline" href="{% url 'documents:document_task_detail' task.pk %}">Отмена</a>
+            <button class="button" type="submit">Сохранить</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

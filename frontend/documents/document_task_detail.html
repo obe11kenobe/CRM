@@ -79,6 +79,7 @@
         <div class="doc-detail-actions">
             {% if task.route %}
                 <a class="button button-outline" href="{% url 'submissions:route_fields_form' task.pk %}">Заполнить форму подачи</a>
+                <a class="button button-outline" href="{% url 'submissions:package_status_form' task.pk %}">Управление подачей</a>
             {% endif %}
             <a class="button button-outline" href="{% url 'documents:document_task_update' task.pk %}">Редактировать</a>
             <a class="button button-danger" href="{% url 'documents:document_task_delete' task.pk %}">Удалить</a>

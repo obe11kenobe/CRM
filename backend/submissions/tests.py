@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from documents.models import Authority, DocumentTask
-from submissions.forms import RouteFieldsForm
+from submissions.forms import RouteFieldsForm, SubmissionPackageForm
 from submissions.models import DocumentRoute, SubmissionPackage
 
 
@@ -174,3 +174,132 @@ class RouteFieldsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context["form"].is_valid())
         self.assertContains(response, "ООО Ромашка")
+
+
+class SubmissionPackageFormTests(TestCase):
+    def setUp(self):
+        self.authority = Authority.objects.create(name="Уралнедра")
+        self.route = DocumentRoute.objects.create(
+            route_id="T08",
+            name="Лицензия на маркшейдерские работы",
+            document_process="Лицензия на маркшейдерские работы",
+            authority=self.authority,
+            required_attachments=["license_file", "power_of_attorney"],
+        )
+        self.task = DocumentTask.objects.create(title="Лицензия на маркшейдерские работы")
+        self.package, _ = SubmissionPackage.objects.get_or_create(task=self.task, route=self.route)
+
+    def test_form_includes_checkbox_per_required_attachment(self):
+        form = SubmissionPackageForm(route=self.route, instance=self.package)
+
+        self.assertIn("license_file", form.fields)
+        self.assertIn("power_of_attorney", form.fields)
+        self.assertIsInstance(form.fields["license_file"], forms.BooleanField)
+
+    def test_ready_status_without_confirmed_attachments_is_invalid(self):
+        form = SubmissionPackageForm(
+            {"status": "ready", "comment": ""},
+            route=self.route,
+            instance=self.package,
+        )
+
+        self.assertFalse(form.is_valid())
+
+    def test_ready_status_with_all_attachments_confirmed_is_valid(self):
+        form = SubmissionPackageForm(
+            {
+                "status": "ready",
+                "comment": "",
+                "license_file": "on",
+                "power_of_attorney": "on",
+            },
+            route=self.route,
+            instance=self.package,
+        )
+
+        self.assertTrue(form.is_valid())
+
+    def test_saving_valid_form_stores_confirmed_attachments(self):
+        form = SubmissionPackageForm(
+            {
+                "status": "ready",
+                "comment": "",
+                "license_file": "on",
+                "power_of_attorney": "on",
+            },
+            route=self.route,
+            instance=self.package,
+        )
+
+        self.assertTrue(form.is_valid())
+        form.save()
+
+        self.package.refresh_from_db()
+        self.assertEqual(set(self.package.confirmed_attachments), {"license_file", "power_of_attorney"})
+
+    def test_previously_confirmed_attachments_are_preselected(self):
+        self.package.confirmed_attachments = ["license_file"]
+        self.package.save()
+
+        form = SubmissionPackageForm(route=self.route, instance=self.package)
+
+        self.assertTrue(form.fields["license_file"].initial)
+        self.assertFalse(form.fields["power_of_attorney"].initial)
+
+
+class PackageStatusViewTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="specialist2", password="password123")
+        for codename in ["change_submissionpackage", "view_documenttask"]:
+            self.user.user_permissions.add(Permission.objects.get(codename=codename))
+        self.client.force_login(self.user)
+
+        self.authority = Authority.objects.create(name="Уралнедра")
+        self.route = DocumentRoute.objects.create(
+            route_id="T08",
+            name="Лицензия на маркшейдерские работы",
+            document_process="Лицензия на маркшейдерские работы",
+            authority=self.authority,
+            required_attachments=["license_file", "power_of_attorney"],
+        )
+        self.task = DocumentTask.objects.create(title="Лицензия на маркшейдерские работы")
+
+    def test_get_renders_status_form_with_checklist(self):
+        response = self.client.get(reverse("submissions:package_status_form", args=[self.task.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Комплектность вложений")
+
+    def test_get_shows_missing_route_page_when_no_route(self):
+        task = DocumentTask.objects.create(title="Совсем неизвестный документ 12345")
+
+        response = self.client.get(reverse("submissions:package_status_form", args=[task.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "не выбран маршрут")
+
+    def test_post_ready_without_attachments_does_not_save(self):
+        response = self.client.post(
+            reverse("submissions:package_status_form", args=[self.task.pk]),
+            data={"status": "ready", "comment": ""},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        package = SubmissionPackage.objects.get(task=self.task, route=self.route)
+        self.assertEqual(package.status, "draft")
+
+    def test_post_ready_with_all_attachments_saves_and_redirects(self):
+        response = self.client.post(
+            reverse("submissions:package_status_form", args=[self.task.pk]),
+            data={
+                "status": "ready",
+                "comment": "",
+                "license_file": "on",
+                "power_of_attorney": "on",
+            },
+        )
+
+        self.assertRedirects(response, reverse("documents:document_task_detail", args=[self.task.pk]))
+        package = SubmissionPackage.objects.get(task=self.task, route=self.route)
+        self.assertEqual(package.status, "ready")
+        self.assertEqual(set(package.confirmed_attachments), {"license_file", "power_of_attorney"})

@@ -1,4 +1,4 @@
-from django.core.exceptions import ValidationError
+from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.db import models
 
 class DocumentRoute(models.Model):
@@ -180,6 +180,12 @@ class SubmissionPackage(models.Model):
     created_at =  models.DateTimeField(auto_now_add=True, verbose_name='Создано')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Обновлено')
 
+    confirmed_attachments = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Подтвержденные вложения'
+    )
+
     def clean(self):
         errors = {}
 
@@ -200,6 +206,17 @@ class SubmissionPackage(models.Model):
             errors['proof_file'] = (
                 'Для регистрации или закрытия нужен входящий номер или файл доказательства.'
             )
+
+        if self.status not in (self.Status.DRAFT, self.Status.CANCELLED):
+            missing = [
+                code for code in self.route.required_attachments
+                if code not in self.confirmed_attachments
+            ]
+            if missing:
+                errors[NON_FIELD_ERRORS] = (
+                    f'Не отмечены вложения: {", ".join(missing)}'
+                )
+
 
         if errors:
             raise ValidationError(errors)
