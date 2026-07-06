@@ -6,6 +6,7 @@ from pathlib import Path
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -317,6 +318,8 @@ def document_task_delete(request, pk):
             task_title,
             request.user,
         )
+        if request.headers.get('HX-Request') == 'true':
+            return HttpResponse(status=200)
         return redirect('documents:document_task_list')
 
     return render(request, 'documents/document_task_confirm_delete.html', {'task': task})

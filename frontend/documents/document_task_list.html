@@ -114,7 +114,15 @@
         </div>
     </div>
 
-    <form class="docs-toolbar" method="get">
+    <form class="docs-toolbar"
+          method="get"
+          hx-get="{% url 'documents:document_task_list' %}"
+          hx-select="#results-region"
+          hx-target="#results-region"
+          hx-swap="outerHTML"
+          hx-push-url="true"
+          hx-trigger="submit, change, keyup changed delay:400ms from:#q"
+          hx-indicator="#filter-spinner">
         <div class="field">
             <label for="q">Поиск</label>
             <input id="q" type="search" name="q" value="{{ filters.q }}" placeholder="Документ, лицензия, инстанция">
@@ -160,9 +168,13 @@
             </select>
         </div>
 
-        <button class="button button-auto" type="submit">Показать</button>
+        <button class="button button-auto" type="submit">
+            Показать
+            <span class="spinner htmx-indicator" id="filter-spinner"></span>
+        </button>
     </form>
 
+    <div id="results-region">
     {% if tasks %}
     <form method="post" action="{% url 'documents:document_task_bulk_delete' %}" id="bulk-delete-form">
         {% csrf_token %}
@@ -194,7 +206,7 @@
             </thead>
             <tbody>
                 {% for task in tasks %}
-                <tr>
+                <tr id="task-row-{{ task.pk }}">
                     <td>
                         <input class="docs-checkbox task-checkbox" type="checkbox" name="tasks" value="{{ task.pk }}" aria-label="Выбрать {{ task.title }}">
                     </td>
@@ -234,7 +246,11 @@
                         <div class="row-actions">
                             <a href="{% url 'documents:document_task_detail' task.pk %}">Открыть</a>
                             <a href="{% url 'documents:document_task_update' task.pk %}">Изменить</a>
-                            <a class="danger" href="{% url 'documents:document_task_delete' task.pk %}">Удалить</a>
+                            <a class="danger" href="{% url 'documents:document_task_delete' task.pk %}"
+                               hx-post="{% url 'documents:document_task_delete' task.pk %}"
+                               hx-confirm="Удалить документ «{{ task.title }}»?"
+                               hx-target="#task-row-{{ task.pk }}"
+                               hx-swap="outerHTML swap:200ms">Удалить</a>
                         </div>
                     </td>
                 </tr>
@@ -246,11 +262,15 @@
     {% if page_obj.has_other_pages %}
     <nav class="pagination" aria-label="Страницы документов">
         {% if page_obj.has_previous %}
-            <a href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}">Назад</a>
+            <a href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}"
+               hx-get="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}"
+               hx-select="#results-region" hx-target="#results-region" hx-swap="outerHTML" hx-push-url="true">Назад</a>
         {% endif %}
         <span class="pagination-current">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
         {% if page_obj.has_next %}
-            <a href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}">Вперед</a>
+            <a href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}"
+               hx-get="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}"
+               hx-select="#results-region" hx-target="#results-region" hx-swap="outerHTML" hx-push-url="true">Вперед</a>
         {% endif %}
     </nav>
     {% endif %}
@@ -262,6 +282,7 @@
         </div>
     </div>
     {% endif %}
+    </div>
 </div>
 <script>
     (function () {

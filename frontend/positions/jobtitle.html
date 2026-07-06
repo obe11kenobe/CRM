@@ -91,7 +91,7 @@
             </thead>
             <tbody>
                 {% for position in positions %}
-                <tr>
+                <tr id="position-row-{{ position.pk }}">
                     <td>
                         <strong>{{ position.job_title|default:"Без названия" }}</strong>
                         {% if position.description %}
@@ -110,7 +110,11 @@
                     <td>
                         <div class="row-actions">
                             <a href="{% url 'job_title_update' position.pk %}">Изменить</a>
-                            <a href="{% url 'job_title_delete' position.pk %}" class="danger">Удалить</a>
+                            <a href="{% url 'job_title_delete' position.pk %}" class="danger"
+                               hx-post="{% url 'job_title_delete' position.pk %}"
+                               hx-confirm="Удалить должность «{{ position.job_title }}»?"
+                               hx-target="#position-row-{{ position.pk }}"
+                               hx-swap="outerHTML swap:200ms">Удалить</a>
                         </div>
                     </td>
                 </tr>

@@ -4,6 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}CRM{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
     <style>
         :root {
             --bg:           #f0f2f5;
@@ -604,6 +608,25 @@
         .mt-4 { margin-top: 16px; }
         .mt-6 { margin-top: 24px; }
 
+        /* ─── HTMX ─────────────────────────────────── */
+
+        .htmx-indicator { opacity: 0; transition: opacity .15s; }
+        .htmx-request .htmx-indicator,
+        .htmx-request.htmx-indicator { opacity: 1; }
+
+        #results-region.htmx-swapping { opacity: .4; transition: opacity .1s; }
+
+        .spinner {
+            width: 15px; height: 15px;
+            border: 2px solid var(--line);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin .6s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
         /* ─── MOBILE ───────────────────────────────── */
 
         @media (max-width: 640px) {
@@ -669,7 +692,7 @@
         }
     </style>
 </head>
-<body class="{% if user.is_authenticated %}is-auth{% endif %}">
+<body class="{% if user.is_authenticated %}is-auth{% endif %}" hx-boost="true">
 <div class="page">
 
     {% if user.is_authenticated %}
@@ -730,7 +753,7 @@
             </a>
 
             {% if user.is_staff %}
-            <a href="{% url 'admin:index' %}" class="nav-item">
+            <a href="{% url 'admin:index' %}" class="nav-item" hx-boost="false">
                 <svg width="15" height="15" fill="none" viewBox="0 0 15 15" stroke="currentColor" stroke-width="1.5">
                     <path d="M7.5 1L9.2 5.4H14l-3.7 2.7 1.4 4.4L7.5 10 4.3 12.5l1.4-4.4L2 5.4h4.8L7.5 1z" stroke-linejoin="round"/>
                 </svg>
@@ -796,5 +819,10 @@
     </main>
 
 </div>
+<script>
+    document.body.addEventListener('htmx:configRequest', function (event) {
+        event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+    });
+</script>
 </body>
 </html>
