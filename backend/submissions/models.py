@@ -232,3 +232,63 @@ class SubmissionPackage(models.Model):
         ordering = ['-created_at']
         verbose_name = 'Пакет отправки'
         verbose_name_plural = 'Пакеты отправки'
+
+
+class AgencyResponse(models.Model):
+    class ResponseType(models.TextChoices):
+        APPROVED = "approved", "Согласовано / принято"
+        CORRECTIONS_NEEDED = "corrections_needed", "Замечания / доработка"
+        REJECTED = "rejected", "Отказ"
+        INFO_REQUEST = "info_request", "Запрос дополнительной информации"
+
+    package = models.ForeignKey(
+        SubmissionPackage,
+        on_delete=models.CASCADE,
+        related_name='responses',
+        verbose_name='Пакет отправки',
+    )
+    response_type = models.CharField(
+        max_length=30,
+        choices=ResponseType.choices,
+        verbose_name='Тип ответа',
+    )
+    received_at = models.DateTimeField(verbose_name='Дата получения ответа')
+    correction_due_date = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Срок устранения замечаний',
+    )
+    comment = models.TextField(blank=True, verbose_name='Комментарий')
+    response_file = models.FileField(
+        upload_to='agency_responses/',
+        blank=True,
+        null=True,
+        verbose_name='Файл ответа',
+    )
+    created_by = models.ForeignKey(
+        'users.CustomUser',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='created_agency_responses',
+        verbose_name='Кто зафиксировал',
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
+
+    def clean(self):
+        if self.response_type == self.ResponseType.CORRECTIONS_NEEDED and not self.correction_due_date:
+            raise ValidationError({
+                'correction_due_date': 'Для замечаний нужно указать срок устранения.',
+            })
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.get_response_type_display()} - {self.package}'
+
+    class Meta:
+        ordering = ['-received_at']
+        verbose_name = 'Ответ ведомства'
+        verbose_name_plural = 'Ответы ведомств'

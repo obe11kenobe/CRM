@@ -1,7 +1,7 @@
 from django import forms
 
 from .fields import FIELD_REGISTRY
-from .models import SubmissionPackage
+from .models import AgencyResponse, SubmissionPackage
 
 
 class RouteFieldsForm(forms.Form):
@@ -45,3 +45,26 @@ class SubmissionPackageForm(forms.ModelForm):
             if self.cleaned_data.get(code)
         ]
         super()._post_clean()
+
+
+class AgencyResponseForm(forms.ModelForm):
+    class Meta:
+        model = AgencyResponse
+        fields = (
+            'response_type',
+            'received_at',
+            'correction_due_date',
+            'comment',
+            'response_file',
+        )
+        widgets = {
+            'received_at': forms.DateTimeInput(
+                format='%Y-%m-%dT%H:%M',
+                attrs={'type': 'datetime-local'},
+            ),
+            'correction_due_date': forms.DateTimeInput(
+                format='%Y-%m-%dT%H:%M',
+                attrs={'type': 'datetime-local'},
+            ),
+            'comment': forms.Textarea(attrs={'rows': 3}),
+        }

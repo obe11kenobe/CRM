@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Ответ ведомства | CRM{% endblock %}
+
+{% block content %}
+<style>
+    .doc-form-page { width: min(100%, 860px); }
+    .doc-form-shell {
+        display: grid;
+        gap: 18px;
+        padding: 22px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+    .doc-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+    .doc-form-wide { grid-column: 1 / -1; }
+    .doc-form-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding-top: 6px;
+        border-top: 1px solid var(--line);
+    }
+    .doc-form-actions .button { width: auto; }
+    @media (max-width: 760px) {
+        .doc-form-grid { grid-template-columns: 1fr; }
+        .doc-form-actions { flex-direction: column-reverse; }
+        .doc-form-actions .button { width: 100%; }
+    }
+</style>
+
+<div class="doc-form-page">
+    <div class="page-header">
+        <h1 class="page-title">Зафиксировать ответ ведомства</h1>
+        <p class="page-sub">Документ: «{{ task.title }}».</p>
+    </div>
+
+    <form class="doc-form-shell" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            {{ form.non_field_errors }}
+        {% endif %}
+
+        <div class="doc-form-grid">
+            <div class="field">
+                {{ form.response_type.label_tag }}
+                {{ form.response_type }}
+                {{ form.response_type.errors }}
+            </div>
+            <div class="field">
+                {{ form.received_at.label_tag }}
+                {{ form.received_at }}
+                {{ form.received_at.errors }}
+            </div>
+            <div class="field">
+                {{ form.correction_due_date.label_tag }}
+                {{ form.correction_due_date }}
+                {{ form.correction_due_date.errors }}
+                <div class="helptext">Обязательно, если тип ответа — «Замечания / доработка».</div>
+            </div>
+            <div class="field">
+                {{ form.response_file.label_tag }}
+                {{ form.response_file }}
+                {{ form.response_file.errors }}
+            </div>
+            <div class="field doc-form-wide">
+                {{ form.comment.label_tag }}
+                {{ form.comment }}
+                {{ form.comment.errors }}
+            </div>
+        </div>
+
+        <div class="doc-form-actions">
+            <a class="button button-outline" href="{% url 'submissions:package_status_form' task.pk %}">Отмена</a>
+            <button class="button" type="submit">Сохранить</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

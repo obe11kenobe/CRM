@@ -1,12 +1,14 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from documents.models import Authority, DocumentTask
 from submissions.forms import RouteFieldsForm, SubmissionPackageForm
-from submissions.models import DocumentRoute, SubmissionPackage
+from submissions.models import AgencyResponse, DocumentRoute, SubmissionPackage
 
 
 class DocumentRouteMatchingTests(TestCase):
@@ -346,3 +348,98 @@ class PackageListViewTests(TestCase):
         response = self.client.get(reverse("submissions:package_list"))
 
         self.assertEqual(response.status_code, 403)
+
+
+class AgencyResponseValidationTests(TestCase):
+    def setUp(self):
+        authority = Authority.objects.create(name="Уралнедра")
+        route = DocumentRoute.objects.create(
+            route_id="T08",
+            name="Маркшейдерская лицензия",
+            document_process="Лицензия на маркшейдерские работы",
+            authority=authority,
+        )
+        task = DocumentTask.objects.create(title="Лицензия на маркшейдерские работы")
+        self.package = SubmissionPackage.objects.create(task=task, route=route)
+
+    def test_corrections_needed_requires_due_date(self):
+        response = AgencyResponse(
+            package=self.package,
+            response_type=AgencyResponse.ResponseType.CORRECTIONS_NEEDED,
+            received_at=timezone.now(),
+        )
+
+        with self.assertRaises(ValidationError):
+            response.full_clean()
+
+    def test_approved_does_not_require_due_date(self):
+        response = AgencyResponse.objects.create(
+            package=self.package,
+            response_type=AgencyResponse.ResponseType.APPROVED,
+            received_at=timezone.now(),
+        )
+
+        self.assertIsNone(response.correction_due_date)
+
+
+class AgencyResponseCreateViewTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="specialist3", password="password123")
+        self.user.user_permissions.add(Permission.objects.get(codename="change_submissionpackage"))
+        self.client.force_login(self.user)
+
+        authority = Authority.objects.create(name="Уралнедра")
+        self.route = DocumentRoute.objects.create(
+            route_id="T08",
+            name="Маркшейдерская лицензия",
+            document_process="Лицензия на маркшейдерские работы",
+            authority=authority,
+        )
+        self.task = DocumentTask.objects.create(title="Лицензия на маркшейдерские работы")
+        self.package = SubmissionPackage.objects.create(task=self.task, route=self.route)
+
+    def test_get_renders_form(self):
+        response = self.client.get(reverse("submissions:agency_response_create", args=[self.task.pk]))
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_approved_response_is_recorded(self):
+        response = self.client.post(
+            reverse("submissions:agency_response_create", args=[self.task.pk]),
+            data={
+                "response_type": AgencyResponse.ResponseType.APPROVED,
+                "received_at": "2026-01-10T10:00",
+                "comment": "",
+            },
+        )
+
+        self.assertRedirects(response, reverse("submissions:package_status_form", args=[self.task.pk]))
+        self.assertEqual(self.package.responses.count(), 1)
+
+    def test_corrections_needed_response_is_recorded_with_due_date(self):
+        response = self.client.post(
+            reverse("submissions:agency_response_create", args=[self.task.pk]),
+            data={
+                "response_type": AgencyResponse.ResponseType.CORRECTIONS_NEEDED,
+                "received_at": "2026-01-10T10:00",
+                "correction_due_date": "2026-02-10T10:00",
+                "comment": "",
+            },
+        )
+
+        self.assertRedirects(response, reverse("submissions:package_status_form", args=[self.task.pk]))
+        saved_response = self.package.responses.get()
+        self.assertIsNotNone(saved_response.correction_due_date)
+
+    def test_corrections_needed_without_due_date_is_invalid(self):
+        response = self.client.post(
+            reverse("submissions:agency_response_create", args=[self.task.pk]),
+            data={
+                "response_type": AgencyResponse.ResponseType.CORRECTIONS_NEEDED,
+                "received_at": "2026-01-10T10:00",
+                "comment": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.package.responses.count(), 0)

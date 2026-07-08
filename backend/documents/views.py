@@ -10,6 +10,8 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
+from users.audit import log_action
+
 from .forms import DocumentAssignmentForm, DocumentImportForm, DocumentTaskForm
 from .importers import import_document_plan
 from .models import DocumentDirection, DocumentTask, MiningObject
@@ -263,6 +265,7 @@ def document_task_create(request):
                 task.title,
                 request.user,
             )
+            log_action(request.user, 'create', task)
             return redirect('documents:document_task_detail', pk=task.pk)
         logger.warning(
             'Invalid document task create form: user=%s errors=%s',
@@ -290,6 +293,7 @@ def document_task_update(request, pk):
                 task.title,
                 request.user,
             )
+            log_action(request.user, 'update', task)
             return redirect('documents:document_task_detail', pk=task.pk)
         logger.warning(
             'Invalid document task update form: id=%s user=%s errors=%s',
@@ -311,6 +315,7 @@ def document_task_delete(request, pk):
     if request.method == 'POST':
         task_id = task.pk
         task_title = task.title
+        log_action(request.user, 'delete', task)
         task.delete()
         logger.info(
             'Document task deleted: id=%s title=%s user=%s',
@@ -335,6 +340,10 @@ def document_task_bulk_delete(request):
     tasks = DocumentTask.objects.filter(pk__in=task_ids)
     deleted_ids = list(tasks.values_list('pk', flat=True))
     deleted_count = tasks.count()
+
+    for task in tasks:
+        log_action(request.user, 'delete', task)
+
     tasks.delete()
 
     logger.info(

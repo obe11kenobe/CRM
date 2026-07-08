@@ -11,6 +11,7 @@ from django.views import View
 from django.views.generic import DeleteView, ListView, TemplateView, UpdateView
 from django.views.generic.edit import CreateView
 
+from .audit import log_action
 from .forms import CustomUserCreationForm, ProfileUserForm, JobTitleForm
 from .models import CustomUser, JobTitle
 
@@ -94,6 +95,11 @@ class JobTitleCreateViews(LoginRequiredMixin, PermissionRequiredMixin, CreateVie
     permission_required = 'users.add_jobtitle'
     raise_exception = True
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        log_action(self.request.user, 'create', self.object)
+        return response
+
 class JobTitleUpdateViews(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = JobTitle
     form_class = JobTitleForm
@@ -101,6 +107,11 @@ class JobTitleUpdateViews(LoginRequiredMixin, PermissionRequiredMixin, UpdateVie
     success_url = reverse_lazy('job_title_list')
     permission_required = 'users.change_jobtitle'
     raise_exception = True
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        log_action(self.request.user, 'update', self.object)
+        return response
 
 class JobTitleDeleteViews(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = JobTitle
@@ -110,6 +121,7 @@ class JobTitleDeleteViews(LoginRequiredMixin, PermissionRequiredMixin, DeleteVie
     raise_exception = True
 
     def form_valid(self, form):
+        log_action(self.request.user, 'delete', self.object)
         response = super().form_valid(form)
         if self.request.headers.get('HX-Request') == 'true':
             return HttpResponse(status=200)

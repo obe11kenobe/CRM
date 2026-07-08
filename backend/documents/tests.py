@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from documents.models import Authority, DeadlineReminder, DocumentDirection, DocumentTask, License, MiningObject
+from users.models import AuditLogEntry
 from submissions.models import DocumentRoute
 
 
@@ -274,3 +275,41 @@ class SendDeadlineRemindersTests(TestCase):
         call_command("send_deadline_reminders")
 
         self.assertEqual(len(mail.outbox), 0)
+
+
+class DocumentTaskAuditLogTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="auditedspecialist", password="password123")
+        for codename in ["add_documenttask", "change_documenttask", "delete_documenttask", "view_documenttask"]:
+            self.user.user_permissions.add(Permission.objects.get(codename=codename))
+        self.client.force_login(self.user)
+
+    def test_create_logs_audit_entry(self):
+        self.client.post(reverse("documents:document_task_create"), data={"title": "Новая задача", "status": "planned"})
+
+        task = DocumentTask.objects.get(title="Новая задача")
+        self.assertTrue(
+            AuditLogEntry.objects.filter(action="create", model_name="DocumentTask", object_id=str(task.pk)).exists()
+        )
+
+    def test_update_logs_audit_entry(self):
+        task = DocumentTask.objects.create(title="Задача")
+
+        self.client.post(
+            reverse("documents:document_task_update", args=[task.pk]),
+            data={"title": "Задача (изменена)", "status": "planned"},
+        )
+
+        self.assertTrue(
+            AuditLogEntry.objects.filter(action="update", model_name="DocumentTask", object_id=str(task.pk)).exists()
+        )
+
+    def test_delete_logs_audit_entry(self):
+        task = DocumentTask.objects.create(title="Задача на удаление")
+        task_id = task.pk
+
+        self.client.post(reverse("documents:document_task_delete", args=[task_id]))
+
+        self.assertTrue(
+            AuditLogEntry.objects.filter(action="delete", model_name="DocumentTask", object_id=str(task_id)).exists()
+        )

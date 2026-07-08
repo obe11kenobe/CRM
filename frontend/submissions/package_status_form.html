@@ -126,5 +126,39 @@
             <button class="button" type="submit">Сохранить</button>
         </div>
     </form>
+
+    <div class="route-form-shell mt-6">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+            <p class="route-form-section-title">Ответы ведомства</p>
+            <a class="button button-outline button-auto" href="{% url 'submissions:agency_response_create' task.pk %}">Добавить ответ</a>
+        </div>
+
+        {% if responses %}
+            <div class="table-wrap" style="border:0;box-shadow:none;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Тип ответа</th>
+                            <th>Дата получения</th>
+                            <th>Срок устранения</th>
+                            <th>Комментарий</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for response in responses %}
+                        <tr>
+                            <td>{{ response.get_response_type_display }}</td>
+                            <td>{{ response.received_at|date:"d.m.Y H:i" }}</td>
+                            <td>{{ response.correction_due_date|date:"d.m.Y H:i"|default:"-" }}</td>
+                            <td>{{ response.comment|default:"-"|truncatechars:60 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p style="color:var(--muted);font-size:14px;margin-top:10px;">Ответов от ведомства пока нет.</p>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

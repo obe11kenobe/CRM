@@ -4,9 +4,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.core.paginator import Paginator
 
 from documents.models import DocumentTask
+from users.audit import log_action
 
-from .forms import RouteFieldsForm, SubmissionPackageForm
-from .models import SubmissionPackage, DocumentRoute
+from .forms import AgencyResponseForm, RouteFieldsForm, SubmissionPackageForm
+from .models import AgencyResponse, SubmissionPackage, DocumentRoute
 
 def _serialize_value(value):
     if hasattr(value, 'isoformat'):
@@ -61,11 +62,51 @@ def package_status_form(request, task_id):
         form = SubmissionPackageForm(request.POST, request.FILES, route=task.route, instance=package)
         if form.is_valid():
             form.save()
+            log_action(request.user, 'update', package, details=f'Статус пакета изменён на «{package.get_status_display()}».')
             return redirect('documents:document_task_detail', pk=task.pk)
     else:
         form = SubmissionPackageForm(route=task.route, instance=package)
 
-    return render(request, 'submissions/package_status_form.html', {'form': form, 'task': task})
+    responses = package.responses.all()
+
+    return render(
+        request,
+        'submissions/package_status_form.html',
+        {'form': form, 'task': task, 'package': package, 'responses': responses},
+    )
+
+@login_required
+@permission_required('submissions.change_submissionpackage', raise_exception=True)
+def agency_response_create(request, task_id):
+    task = get_object_or_404(DocumentTask, id=task_id)
+
+    if not task.route:
+        return render(request, 'submissions/route_fields_missing.html', {'task': task})
+
+    package, _ = SubmissionPackage.objects.get_or_create(
+        task=task,
+        route=task.route,
+        defaults={'created_by': request.user}
+    )
+
+    if request.method == 'POST':
+        form = AgencyResponseForm(request.POST, request.FILES)
+        if form.is_valid():
+            response = form.save(commit=False)
+            response.package = package
+            response.created_by = request.user
+            response.save()
+            log_action(request.user, 'create', response)
+
+            return redirect('submissions:package_status_form', task_id=task.pk)
+    else:
+        form = AgencyResponseForm()
+
+    return render(
+        request,
+        'submissions/agency_response_form.html',
+        {'form': form, 'task': task},
+    )
 
 def _paginate_queryset(request, queryset, per_page=50):
     paginator = Paginator(queryset, per_page)

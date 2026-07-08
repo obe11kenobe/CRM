@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import DocumentRoute, SubmissionPackage
+from .models import AgencyResponse, DocumentRoute, SubmissionPackage
+
+
+class AgencyResponseInline(admin.TabularInline):
+    model = AgencyResponse
+    extra = 0
+    fields = ("response_type", "received_at", "correction_due_date", "created_by")
+    readonly_fields = ("created_by",)
 
 
 @admin.register(DocumentRoute)
@@ -55,3 +62,12 @@ class SubmissionPackageAdmin(admin.ModelAdmin):
         "agency_incoming_number",
     )
     readonly_fields = ("created_at", "updated_at")
+    inlines = [AgencyResponseInline]
+
+
+@admin.register(AgencyResponse)
+class AgencyResponseAdmin(admin.ModelAdmin):
+    list_display = ("package", "response_type", "received_at", "correction_due_date", "created_by")
+    list_filter = ("response_type",)
+    search_fields = ("package__task__title", "comment")
+    readonly_fields = ("created_at",)

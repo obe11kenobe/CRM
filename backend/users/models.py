@@ -67,3 +67,33 @@ class JobTitle (models.Model):
     class Meta:
         verbose_name = 'Должность'
         verbose_name_plural = 'Должности'
+
+
+class AuditLogEntry(models.Model):
+    class Action(models.TextChoices):
+        CREATE = 'create', 'Создание'
+        UPDATE = 'update', 'Изменение'
+        DELETE = 'delete', 'Удаление'
+
+    user = models.ForeignKey(
+        'CustomUser',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='audit_log_entries',
+        verbose_name='Пользователь',
+    )
+    action = models.CharField(max_length=10, choices=Action.choices, verbose_name='Действие')
+    model_name = models.CharField(max_length=100, verbose_name='Модель')
+    object_id = models.CharField(max_length=50, verbose_name='ID объекта')
+    object_repr = models.CharField(max_length=200, verbose_name='Объект')
+    details = models.TextField(blank=True, verbose_name='Подробности')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Когда')
+
+    def __str__(self):
+        return f'{self.get_action_display()}: {self.model_name} «{self.object_repr}»'
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Запись аудита'
+        verbose_name_plural = 'Журнал аудита'
