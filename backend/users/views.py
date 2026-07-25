@@ -142,6 +142,17 @@ class ProfileUserView(LoginRequiredMixin, UpdateView):
     def get_object(self):
         return self.request.user
 
+class ChatView(LoginRequiredMixin, TemplateView):
+    template_name = 'users/chat.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        colleagues = CustomUser.objects.exclude(pk=self.request.user.pk)
+        context['colleagues_data'] = [
+            {'id': user.id, 'full_name': user.full_name} for user in colleagues
+        ]
+        return context
+
 @login_required
 def messenger_token(request):
     payload = {

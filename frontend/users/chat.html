@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Чат{% endblock %}
+
+{% block content %}
+<div class="workspace">
+    <div class="workspace-header">
+        <div>
+            <h1 class="workspace-title">Чат</h1>
+            <p class="workspace-subtitle">Сообщения между сотрудниками</p>
+        </div>
+    </div>
+
+    <div class="chat-layout">
+        <aside class="chat-colleagues" id="chat-colleagues"></aside>
+
+        <section class="chat-window">
+            <div class="chat-messages" id="chat-messages"></div>
+            <form class="chat-input-row" id="chat-form">
+                <input type="text" id="chat-input" placeholder="Написать сообщение..." autocomplete="off">
+                <button type="submit" class="button button-auto">Отправить</button>
+            </form>
+        </section>
+    </div>
+</div>
+
+{{ colleagues_data|json_script:"colleagues-data" }}
+
+<style>
+    .chat-layout {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 16px;
+        height: 70vh;
+    }
+    .chat-colleagues {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow-y: auto;
+    }
+    .chat-colleague {
+        display: block;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--line);
+        cursor: pointer;
+        font-size: 14px;
+    }
+    .chat-colleague:hover { background: var(--bg); }
+    .chat-colleague.active { background: var(--primary-dim); color: var(--primary); font-weight: 600; }
+
+    .chat-window {
+        display: flex;
+        flex-direction: column;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+    }
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .chat-message {
+        max-width: 70%;
+        padding: 8px 12px;
+        border-radius: 10px;
+        background: var(--bg);
+        font-size: 14px;
+        line-height: 1.4;
+    }
+    .chat-message.mine {
+        align-self: flex-end;
+        background: var(--primary-dim);
+    }
+    .chat-input-row {
+        display: flex;
+        gap: 8px;
+        padding: 12px;
+        border-top: 1px solid var(--line);
+    }
+    .chat-input-row input {
+        flex: 1;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 9px 12px;
+        font: inherit;
+    }
+</style>
+
+<script src="{% static 'users/chat.js' %}" defer
+        data-token-url="{% url 'messenger_token' %}"
+        data-current-user-id="{{ request.user.id }}"></script>
+{% endblock %}

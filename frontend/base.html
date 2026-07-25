@@ -750,6 +750,14 @@
                 Должности
             </a>
 
+            <a href="{% url 'chat' %}"
+               class="nav-item {% if request.resolver_match.url_name == 'chat' %}active{% endif %}">
+                <svg width="15" height="15" fill="none" viewBox="0 0 15 15" stroke="currentColor" stroke-width="1.5">
+                    <path d="M1.5 3h12v7.5h-8L2.5 13v-2.5H1.5V3z" stroke-linejoin="round"/>
+                </svg>
+                Чат
+            </a>
+
             <div class="nav-group-label">Аккаунт</div>
 
             <a href="{% url 'profile' %}"
@@ -810,6 +818,7 @@
             <a href="{% url 'documents:document_assignment' %}">Назначить</a>
             <a href="{% url 'submissions:package_list' %}">Журнал подачи</a>
             <a href="{% url 'job_title_list' %}">Должности</a>
+            <a href="{% url 'chat' %}">Чат</a>
             <a href="{% url 'profile' %}">Профиль</a>
         </nav>
     </header>
