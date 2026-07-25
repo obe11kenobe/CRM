@@ -11,6 +11,12 @@ from django.views import View
 from django.views.generic import DeleteView, ListView, TemplateView, UpdateView
 from django.views.generic.edit import CreateView
 
+import time
+import jwt
+from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+
 from .audit import log_action
 from .forms import CustomUserCreationForm, ProfileUserForm, JobTitleForm
 from .models import CustomUser, JobTitle
@@ -135,3 +141,13 @@ class ProfileUserView(LoginRequiredMixin, UpdateView):
 
     def get_object(self):
         return self.request.user
+
+@login_required
+def messenger_token(request):
+    payload = {
+        "user_id" : request.user.id,
+        "exp": int(time.time()) + 300,
+    }
+
+    token = jwt.encode(payload, settings.JWT_SECRET, algorithm='HS256')
+    return HttpResponse(token)

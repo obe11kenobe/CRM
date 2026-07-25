@@ -10,6 +10,7 @@ from .views import (
     SignUpDoneView,
     ActivationSuccessView,
     ActivationInvalidView,
+    messenger_token,
 )
 
 urlpatterns = [
@@ -24,4 +25,5 @@ urlpatterns = [
     path("activate/<uidb64>/<token>/", ActivateViews.as_view(), name="activate"),
     path("activate/success/", ActivationSuccessView.as_view(), name="activation_success"),
     path("activate/invalid/", ActivationInvalidView.as_view(), name="activation_invalid"),
+    path("messenger-token/", messenger_token, name="messenger_token"),
 ]

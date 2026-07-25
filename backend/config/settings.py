@@ -21,6 +21,7 @@ environ.Env.read_env(ROOT_DIR / ".env")
 
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
+JWT_SECRET = env("JWT_SECRET")
 
 LOGGING = {
     "version": 1,
